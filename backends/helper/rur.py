@@ -45,6 +45,17 @@ class RurModule( visit.Visit) :
 		port_param_name = port_param.identifier()
 		port_param_type = self.getParamType(port_param)
 		port_param_kind = self.getParamKind(port_param)
+		pragmas = portobject.pragmas()
+		comments = portobject.comments()
+		
+		port_pragmas = []
+		for pr in pragmas:
+			port_pragmas.append(pr.text())
+		
+		port_comments = []
+		for co in comments:
+			port_comments.append(co.text())
+		
 		if port_param.is_in():
 			port_direction = Direction.IN
 		elif port_param.is_out():
@@ -54,7 +65,7 @@ class RurModule( visit.Visit) :
 			port_direction = Direction.INOUT
 		else:
 			self.st.out("//! Warning: no proper direction for port defined in .idl file")
-		return port, port_name, port_direction, port_param_name, port_param_type, port_param_kind
+		return port, port_name, port_direction, port_param_name, port_param_type, port_param_kind, port_pragmas, port_comments
 
 	# The function for each port is defined by a preceding "read" or "write", e.g. writeOutput
 	def getPortFunctionName(self, port_name):
@@ -65,13 +76,13 @@ class RurModule( visit.Visit) :
 		return function_name
 
 	def writePortFunctionSignature(self, portobject):
-		port, port_name, port_direction, param_name, param_type, param_kind = self.getPortConfiguration(portobject)
+		port, port_name, port_direction, param_name, param_type, param_kind, port_pragmas, port_comments = self.getPortConfiguration(portobject)
 		if port_direction == Direction.IN:
-			self.st.out( "// Read from this function and assume it means something")
-			self.st.out( "inline " + param_type + " *read" + port_name + "(bool blocking_dummy=false) {" )
+			self.st.out("// Read from this function and assume it means something")
+			self.st.out("inline " + param_type + " *read" + port_name + "(bool blocking_dummy=false) {")
 		if port_direction == Direction.OUT:
-			self.st.out( "// Write to this function and assume it ends up at some receiving module")
-			self.st.out( "inline bool write" + port_name + "(const " + param_type + " " + param_name + ") {" )
+			self.st.out("// Write to this function and assume it ends up at some receiving module")
+			self.st.out("inline bool write" + port_name + "(const " + param_type + " " + param_name + ") {")
 		self.st.inc_indent()
 
 	def writeFunctionEnd(self):
@@ -85,4 +96,10 @@ class RurModule( visit.Visit) :
 		
 	def writeIncludeGuardEnd(self):
 		print "#endif // " + self.classname.upper() + "_H_"
-
+	
+	def writeClassStart(self):
+		self.st.out("class " + self.classname + " {")
+	
+	def writeClassEnd(self):
+		self.st.dec_indent()
+		self.st.out("};")

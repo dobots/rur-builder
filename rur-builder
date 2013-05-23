@@ -8,39 +8,112 @@ version="$program 0.1"
 # Checks
 ####################################################################################################
 
+usage()
+{
+echo "$version"
+echo "Usage: $0 options"
+echo ""
+echo "OPTIONS:"
+echo "    -h        Show this help message"
+echo "    -b arg    Backend (default: standard)"
+echo "    -i arg    IDL file (example: module_name/aim/idl/module_name.idl)"
+echo "    -p arg    Path to the backends"
+echo "    -o arg    Output basename (example: module_name/aim/inc/module_name)"
+#echo "    -H arg    Output interface header file (default: <output_basename>.h)"
+#echo "    -I arg    Output interface implementation file (default: <output_basename>.cpp)"
+echo "    -v        Be verbose"
+}
+
 if [[ "$1" == "" ]]; then
-	echo "No args supplied! Run $0 -h for more info"
+	usage
 	exit 1
 fi
 
-if [[ "$1" == "-h" ]]; then
-	echo $version \- Usage
-	echo 
-	echo "$program \"idl file\" \"backend\" \"backend path\" \"output file\" "
-	echo
-	exit 0 
-fi 
+idl_file=""
+backend="standard"
+backend_path=""
+output_basename=""
+output_file_impl=""
+output_file_head=""
+verbose=0
+
+while getopts "hb:i:p:o:H:I:v" OPTION
+do
+	case $OPTION in
+		h)
+			usage
+			exit 0
+			;;
+		b)
+			backend=$OPTARG
+			;;
+		i)
+			idl_file=$OPTARG
+			;;
+		p)
+			backend_path=$OPTARG
+			;;
+		o)
+			output_basename=$OPTARG
+			;;
+#		H)
+#			output_file_head=$OPTARG
+#			;;
+#		I)
+#			output_file_impl=$OPTARG
+#			;;
+		v)
+			verbose=1
+			;;
+		?)
+			usage
+			exit
+			;;
+	 esac
+done
 
 
-if [[ $# -ne 4 ]]; then
-	echo "[#] We need four parameters. Run $0 -h for more info, currently you used $# parameters"
+if [ ! -r $idl_file ]; then
+	echo "No such file: $idl_file"
 	exit 1
 fi
 
-idl_file=$1
-backend=$2
-backend_path=$3
-output_file=$4
+if [ ! -d $backend_path ]; then
+	echo "No such dir: $backend_path"
+	exit 1
+fi
 
-output_file_tmp=${output_file}.temp
-output_file_invalid=${output_file}.invalid
+if [ -z $output_file_head ]; then
+	if [ -z $output_basename ]; then
+		echo "No basename given"
+		exit 1
+	fi
+	output_file_head="${output_basename}.h"
+fi
+
+if [ -z $output_file_impl ]; then
+	if [ -z $output_basename ]; then
+		echo "No basename given"
+		exit 1
+	fi
+	output_file_impl="${output_basename}.cpp"
+fi
+
+output_file_head_tmp=${output_file_head}.temp
+output_file_impl_tmp=${output_file_impl}.temp
+output_file_head_invalid=${output_file_head}.invalid
+output_file_impl_invalid=${output_file_impl}.invalid
 
 OMNIIDL=$(which omniidl)
 if [[ $OMNIIDL == "" ]]; then
 	echo "[#] Error. There is no omniidl installed!"
-	rm -f ${output_file_invalid}
-	if [ -a ${output_file}  ]; then
-		mv -f ${output_file} ${output_file_invalid}
+	rm -f ${output_file_head_invalid}
+	rm -f ${output_file_impl_invalid}
+	if [ -a ${output_file_head}  ]; then
+		mv -f ${output_file_head} ${output_file_head_invalid}
+	fi
+	if [ -a ${output_file_impl}  ]; then
+		mv -f ${output_file_impl} ${output_file_impl_invalid}
 	fi
 	exit 2
 fi
@@ -48,21 +121,41 @@ fi
 echo "[#] We will use backend \"$backend\""
 
 # Run the omniidl backend
-omniidl -p${backend_path} -b${backend} "${idl_file}" > ${output_file_tmp}
+omniidl -p${backend_path} -bmain_head -Wb${backend} -K "${idl_file}" > ${output_file_head_tmp}
+omniidl -p${backend_path} -bmain_impl -Wb${backend} -K "${idl_file}" > ${output_file_impl_tmp}
+#echo "omniidl -p${backend_path} -bmain_head -Wb${backend} -K \"${idl_file}\" > ${output_file_head_tmp}"
+#echo "omniidl -p${backend_path} -bmain_impl -Wb${backend} -K \"${idl_file}\" > ${output_file_impl_tmp}"
+#omniidl -p${backend_path} -b${backend} "${idl_file}" > ${output_file_tmp}
 
 # Copy it to normal header file only if they are different
-if [ -a ${output_file_tmp}  ]; then
+if [ -a ${output_file_head_tmp} ]; then
 	# Output file already exists
-	if [ -a ${output_file}  ]; then
-		if ! diff -q ${output_file_tmp} ${output_file} > /dev/null ; then
-			mv -f ${output_file_tmp} ${output_file}
+	if [ -a ${output_file_head} ]; then
+		if ! diff -q ${output_file_head_tmp} ${output_file_head} > /dev/null ; then
+			mv -f ${output_file_head_tmp} ${output_file_head}
 		else
-			rm ${output_file_tmp}
+			rm ${output_file_head_tmp}
 		fi
 	else
-		mv -f ${output_file_tmp} ${output_file}
+		mv -f ${output_file_head_tmp} ${output_file_head}
 	fi
 else
-	echo "[#] Error. Something went wrong with generating the file with the rur-builder"
+	echo "[#] Error. Something went wrong with generating the header file with the rur-builder"
+fi
+
+# Copy it to normal implementation file only if they are different
+if [ -a ${output_file_impl_tmp} ]; then
+	# Output file already exists
+	if [ -a ${output_file_impl} ]; then
+		if ! diff -q ${output_file_impl_tmp} ${output_file_impl} > /dev/null ; then
+			mv -f ${output_file_impl_tmp} ${output_file_impl}
+		else
+			rm ${output_file_impl_tmp}
+		fi
+	else
+		mv -f ${output_file_impl_tmp} ${output_file_impl}
+	fi
+else
+	echo "[#] Error. Something went wrong with generating the implementation file with the rur-builder"
 fi
 
