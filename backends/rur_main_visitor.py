@@ -136,10 +136,13 @@ class MainVisitor (rur.RurModule):
 		self.st.out(self.classname + "::~" + self.classname + "() {")
 
 	def writeDestructorImpl(self):
-		pass
+		for s in self.structList:
+			name = s.scopedName()[-1]
+			if name == 'Param':
+				self.st.out("delete cliParam;")
 
 	def writeDestructorImplPort(self, p):
-		pass
+		pass 
 
 # Init implementation
 	def writeInitImplStart(self):
@@ -230,7 +233,7 @@ class MainVisitor (rur.RurModule):
 				  names.append("\"read" + port_name + "\"") 
 			
 			if port_direction == rur.Direction.OUT: 
-				  names.append( "\"write" + port_name + "\"") 
+				  names.append("\"write" + port_name + "\"") 
 		
 		self.st.out("static const int channel_count = " + str(len(names)) + ";")
 		# bug: http://stackoverflow.com/questions/9900242/error-with-constexprgcc-error-a-brace-enclosed-initializer-is-not-allowed-h
@@ -244,7 +247,7 @@ class MainVisitor (rur.RurModule):
 			if port_direction == rur.Direction.IN:
 				names.append("\"read" + port_name + "\"") 
 			if port_direction == rur.Direction.OUT: 
-				names.append( "\"write" + port_name + "\"") 
+				names.append("\"write" + port_name + "\"") 
 		# bug: http://stackoverflow.com/questions/9900242/error-with-constexprgcc-error-a-brace-enclosed-initializer-is-not-allowed-h
 		self.st.out("const char* const channel[" + str(len(names)) + "] = {" + ', '.join(names) + "};")
 
@@ -257,7 +260,7 @@ class MainVisitor (rur.RurModule):
 		self.st.out("")
 
 	def writeInit(self):
-		self.st.out("// Extend this with your own code, first call " + self.classname + "::Init(name); ")
+		self.st.out("// Extend this with your own code, first call " + self.classname + "::Init(name);")
 		self.st.out("void Init(std::string& name);")
 		self.st.out("")
 
@@ -266,8 +269,8 @@ class MainVisitor (rur.RurModule):
 		for s in self.structList:
 			name = s.scopedName()[-1]
 			if name == 'Param':
-				self.st.out('// Function to get Param struct (to subsequently set CLI parameters)')
-				self.st.out('inline Param *GetParam() { return cliParam; };')
+				self.st.out("// Function to get Param struct (to subsequently set CLI parameters)")
+				self.st.out("inline Param *GetParam() { return cliParam; }")
 				self.st.out("")
 
 	def writeTick(self):

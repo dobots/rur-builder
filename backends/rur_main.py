@@ -37,10 +37,10 @@ from rur_main_visitor import MainVisitor
 
 # Actual backends
 from standard import Standard
-from yarp import YarpVisitor
-from zeromq import ZeroMQVisitor
+from yarp import Yarp
 from nodejs import NodeJS
-
+#from zeromq import ZeroMQ
+#from ros import Ros
 
 class Main:
 	def __init__(self, st, tree, args):
@@ -85,9 +85,9 @@ class Main:
 		if (string == "standard"):
 			return Standard(self.st, self.vs, portList)
 		elif (string == "yarp"):
-			return YarpVisitor(self.st, portList)
-		elif (string == "zeromq"):
-			return ZeroMQVisitor(self.st, portList)
+			return Yarp(self.st, self.vs, portList)
+#		elif (string == "zeromq"):
+#			return ZeroMQ(self.st, self.vs, portList)
 		elif (string == "nodejs"):
 			return NodeJS(self.st, self.vs, portList)
 		else:

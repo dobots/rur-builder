@@ -121,8 +121,8 @@ fi
 echo "[#] We will use backend \"$backend\""
 
 # Run the omniidl backend
-omniidl -p${backend_path} -bmain_head -Wb${backend} -K "${idl_file}" > ${output_file_head_tmp}
-omniidl -p${backend_path} -bmain_impl -Wb${backend} -K "${idl_file}" > ${output_file_impl_tmp}
+omniidl -p${backend_path} -brur_main_head -Wb${backend} -K "${idl_file}" > ${output_file_head_tmp}
+omniidl -p${backend_path} -brur_main_impl -Wb${backend} -K "${idl_file}" > ${output_file_impl_tmp}
 #echo "omniidl -p${backend_path} -bmain_head -Wb${backend} -K \"${idl_file}\" > ${output_file_head_tmp}"
 #echo "omniidl -p${backend_path} -bmain_impl -Wb${backend} -K \"${idl_file}\" > ${output_file_impl_tmp}"
 #omniidl -p${backend_path} -b${backend} "${idl_file}" > ${output_file_tmp}

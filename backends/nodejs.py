@@ -225,14 +225,10 @@ class NodeJS:
 
 	def writePort(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
-		#self.writePortFunctionSignature(p) Can't use this now
 		if port_direction == rur.Direction.IN:
-			self.st.out("// Read from this function and assume it means something")
-			self.st.out(param_type + " *read" + port_name + "(bool blocking_dummy=false);")
-		if port_direction == rur.Direction.OUT:
-			self.st.out("// Write to this function and assume it ends up at some receiving module")
-			self.st.out("bool write" + port_name + "(const " + param_type + " " + param_name + ");")
-		self.st.out("")
+			self.vs.writePortFunctionSignature(p)
+		if port_direction == rur.Direction.OUT: 
+			self.vs.writePortFunctionSignature(p)
 
 	def writePortBufInitiation(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
@@ -490,9 +486,7 @@ class NodeJS:
 	def writePortImpl(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
-			#self.writePortFunctionSignature(p) Can't use this
-			self.st.out(param_type + "* " + self.vs.classname + "::read" + port_name + "(bool blocking_dummy) {")
-			self.st.inc_indent()
+			self.writePortFunctionSignatureImpl(p)
 			self.st.out("pthread_mutex_lock(&destroyMutex);")
 			self.st.out("bool destroy = DestroyFlag;")
 			self.st.out("pthread_mutex_unlock(&destroyMutex);")
@@ -526,9 +520,7 @@ class NodeJS:
 			self.st.out("")
 			
 		if port_direction == rur.Direction.OUT:
-			#self.writePortFunctionSignature(p) Can't use this
-			self.st.out("bool " + self.vs.classname + "::write" + port_name + "(const " + param_type + " " + param_name + ") {")
-			self.st.inc_indent()
+			self.writePortFunctionSignatureImpl(p)
 			self.st.out("pthread_mutex_lock(&destroyMutex);")
 			self.st.out("bool destroy = DestroyFlag;")
 			self.st.out("pthread_mutex_unlock(&destroyMutex);")

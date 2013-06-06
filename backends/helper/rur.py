@@ -1,3 +1,4 @@
+from omniidl import idltype
 from helper import visit
 
 def enum(*sequential, **named):
@@ -6,7 +7,7 @@ def enum(*sequential, **named):
 
 Direction = enum('IN','OUT','INOUT')
 
-class RurModule( visit.Visit) :
+class RurModule(visit.Visit) :
 
 	def writeFileComment(self):
 		comment_text = '''/**
@@ -75,31 +76,55 @@ class RurModule( visit.Visit) :
 			function_name = "write" + port_name
 		return function_name
 
+	# returns "float" for "typedef sequence<float> float_seq;" given "float_seq"  
+	def getSeqType(self, type):
+		for t in self.typedefList:
+			for d in t.declarators():
+				if (d.identifier() == type):
+					self.visitRawSequenceType(t.aliasType())
+					return self.__result_type
+
+## Write Functions
+
 	def writePortFunctionSignature(self, portobject):
 		port, port_name, port_direction, param_name, param_type, param_kind, port_pragmas, port_comments = self.getPortConfiguration(portobject)
 		if port_direction == Direction.IN:
 			self.st.out("// Read from this function and assume it means something")
-			self.st.out("inline " + param_type + " *read" + port_name + "(bool blocking_dummy=false) {")
+			if param_kind == idltype.tk_sequence:
+				self.st.out("// Remark: caller is responsible for evoking vector->clear()")
+			else:
+				self.st.out("// Remark: check if result is not NULL")
+			self.st.out(param_type + " *read" + port_name + "(bool blocking=false);")
 		if port_direction == Direction.OUT:
 			self.st.out("// Write to this function and assume it ends up at some receiving module")
-			self.st.out("inline bool write" + port_name + "(const " + param_type + " " + param_name + ") {")
+			if param_kind == idltype.tk_sequence:
+				self.st.out("bool write" + port_name + "(const " + param_type + " &" + param_name + ");")
+			else:
+				self.st.out("bool write" + port_name + "(const " + param_type + " " + param_name + ");")
+
+	def writePortFunctionSignatureImpl(self, portobject):
+		port, port_name, port_direction, param_name, param_type, param_kind, port_pragmas, port_comments = self.getPortConfiguration(portobject)
+		if port_direction == Direction.IN:
+			self.st.out(param_type + "* " + self.classname + "::read" + port_name + "(bool blocking) {")
+		if port_direction == Direction.OUT:
+			self.st.out("bool " + self.classname + "::write" + port_name + "(const " + param_type + " " + param_name + ") {")
 		self.st.inc_indent()
 
 	def writeFunctionEnd(self):
 		self.st.dec_indent()
-		self.st.out( "}" )
-	
+		self.st.out("}")
+
 	def writeIncludeGuardStart(self):
 		print "#ifndef " + self.classname.upper() + "_H_"
 		print "#define " + self.classname.upper() + "_H_"
 		print ""
-		
+
 	def writeIncludeGuardEnd(self):
 		print "#endif // " + self.classname.upper() + "_H_"
-	
+
 	def writeClassStart(self):
 		self.st.out("class " + self.classname + " {")
-	
+
 	def writeClassEnd(self):
 		self.st.dec_indent()
 		self.st.out("};")

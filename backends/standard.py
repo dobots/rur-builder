@@ -111,16 +111,9 @@ class Standard:
 	def writePublicPortFuncsDecl(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
-			#self.st.out("// Read from this function and assume it means something")
 			self.vs.writePortFunctionSignature(p)
-			self.st.out("return &dummy" + port_name + ";")
-			self.vs.writeFunctionEnd()
-			self.st.out("")
 		if port_direction == rur.Direction.OUT: 
-			#self.st.out("// Write to this function and assume it ends up at some receiving module")
 			self.vs.writePortFunctionSignature(p)
-			self.st.out("return true;")
-			self.vs.writeFunctionEnd()
 
 # Constructor implementation
 	def writeConstructorImplStart(self):
@@ -163,7 +156,17 @@ class Standard:
 		pass
 
 	def writePortFuncsImpl(self, p):
-		pass
+		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
+		if port_direction == rur.Direction.IN:
+			self.vs.writePortFunctionSignatureImpl(p)
+			self.st.out("return &dummy" + port_name + ";")
+			self.vs.writeFunctionEnd()
+			self.st.out("")
+		if port_direction == rur.Direction.OUT: 
+			self.vs.writePortFunctionSignatureImpl(p)
+			self.st.out("return true;")
+			self.vs.writeFunctionEnd()
+			self.st.out("")
 
 
 ##########################################################################################
