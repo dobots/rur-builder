@@ -2,7 +2,7 @@
 
 program="rur-builder"
 
-version="$program 0.1"
+version="0.2"
 
 ####################################################################################################
 # Checks
@@ -10,7 +10,7 @@ version="$program 0.1"
 
 usage()
 {
-echo "$version"
+echo "$program $version"
 echo "Usage: $0 options"
 echo ""
 echo "OPTIONS:"
