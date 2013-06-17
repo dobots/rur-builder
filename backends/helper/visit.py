@@ -142,3 +142,12 @@ class Visit (idlvisitor.AstVisitor, idlvisitor.TypeVisitor):
 		result = self.__result_type
 		return result
 
+	# returns "float" for "typedef sequence<float> float_seq;" given "float_seq"  
+	def getSeqType(self, type):
+		for t in self.typedefList:
+			for d in t.declarators():
+				if (d.identifier() == type):
+					self.visitRawSequenceType(t.aliasType())
+#					self.__result_type = self.__result_type
+					res = self.__result_type
+					return res

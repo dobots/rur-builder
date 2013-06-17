@@ -271,7 +271,6 @@ class Yarp:
 		
 		if port_direction == rur.Direction.OUT:
 			self.vs.writePortFunctionSignatureImpl(p)
-			self.st.inc_indent()
 			if param_kind == idltype.tk_sequence:
 				self.st.out("Bottle &" + param_name + "Prepare = " + port + "->prepare();")
 				self.st.out(param_name + "Prepare.clear();")

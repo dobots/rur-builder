@@ -16,12 +16,13 @@ echo ""
 echo "OPTIONS:"
 echo "    -h        Show this help message"
 echo "    -b arg    Backend (default: standard)"
-echo "    -i arg    IDL file (example: module_name/aim/idl/module_name.idl)"
-echo "    -p arg    Path to the backends"
-echo "    -o arg    Output basename (example: module_name/aim/inc/module_name)"
+echo "    -i arg    IDL file (example: ~/MyModule/aim-config/MyModule.idl)"
+echo "    -p arg    Path to the backends (example: /usr/share/rur/backends)"
+echo "    -o arg    Output path (example: ~/MyModule/aim-core)"
+echo "    -n arg    Output basename (example: MyModule)"
 #echo "    -H arg    Output interface header file (default: <output_basename>.h)"
 #echo "    -I arg    Output interface implementation file (default: <output_basename>.cpp)"
-echo "    -v        Be verbose"
+echo "    -v        Be more verbose"
 }
 
 if [[ "$1" == "" ]]; then
@@ -31,13 +32,12 @@ fi
 
 idl_file=""
 backend="standard"
-backend_path=""
+backend_path="/usr/share/rur/backends"
 output_basename=""
-output_file_impl=""
-output_file_head=""
+output_path=""
 verbose=0
 
-while getopts "hb:i:p:o:H:I:v" OPTION
+while getopts "hb:i:p:n:o:v" OPTION
 do
 	case $OPTION in
 		h)
@@ -53,51 +53,48 @@ do
 		p)
 			backend_path=$OPTARG
 			;;
-		o)
+		n)
 			output_basename=$OPTARG
 			;;
-#		H)
-#			output_file_head=$OPTARG
-#			;;
-#		I)
-#			output_file_impl=$OPTARG
-#			;;
+		o)
+			output_path=$OPTARG
+			;;
 		v)
 			verbose=1
 			;;
 		?)
 			usage
-			exit
+			exit 1
 			;;
 	 esac
 done
 
 
 if [ ! -r $idl_file ]; then
-	echo "No such file: $idl_file"
+	echo "[#] Error. No such file: $idl_file"
 	exit 1
 fi
 
 if [ ! -d $backend_path ]; then
-	echo "No such dir: $backend_path"
+	echo "[#] Error. No such dir: $backend_path"
 	exit 1
 fi
 
-if [ -z $output_file_head ]; then
-	if [ -z $output_basename ]; then
-		echo "No basename given"
-		exit 1
-	fi
-	output_file_head="${output_basename}.h"
+if [ ! -d $output_path ]; then
+	echo "[#] Error. No such dir: $output_path"
+	exit 1
 fi
 
-if [ -z $output_file_impl ]; then
-	if [ -z $output_basename ]; then
-		echo "No basename given"
-		exit 1
-	fi
-	output_file_impl="${output_basename}.cpp"
+if [ -z $output_basename ]; then
+	echo "[#] Error. No basename given"
+	exit 1
 fi
+
+mkdir -p ${output_path}/inc
+mkdir -p ${output_path}/src
+
+output_file_head="${output_path}/inc/${output_basename}.h"
+output_file_impl="${output_path}/src/${output_basename}.cpp"
 
 output_file_head_tmp=${output_file_head}.temp
 output_file_impl_tmp=${output_file_impl}.temp

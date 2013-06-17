@@ -76,14 +76,6 @@ class RurModule(visit.Visit) :
 			function_name = "write" + port_name
 		return function_name
 
-	# returns "float" for "typedef sequence<float> float_seq;" given "float_seq"  
-	def getSeqType(self, type):
-		for t in self.typedefList:
-			for d in t.declarators():
-				if (d.identifier() == type):
-					self.visitRawSequenceType(t.aliasType())
-					return self.__result_type
-
 ## Write Functions
 
 	def writePortFunctionSignature(self, portobject):
