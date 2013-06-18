@@ -486,7 +486,7 @@ class NodeJS:
 	def writePortImpl(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
-			self.writePortFunctionSignatureImpl(p)
+			self.vs.writePortFunctionSignatureImpl(p)
 			self.st.out("pthread_mutex_lock(&destroyMutex);")
 			self.st.out("bool destroy = DestroyFlag;")
 			self.st.out("pthread_mutex_unlock(&destroyMutex);")
@@ -520,7 +520,7 @@ class NodeJS:
 			self.st.out("")
 			
 		if port_direction == rur.Direction.OUT:
-			self.writePortFunctionSignatureImpl(p)
+			self.vs.writePortFunctionSignatureImpl(p)
 			self.st.out("pthread_mutex_lock(&destroyMutex);")
 			self.st.out("bool destroy = DestroyFlag;")
 			self.st.out("pthread_mutex_unlock(&destroyMutex);")
