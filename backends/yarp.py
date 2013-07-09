@@ -104,7 +104,7 @@ class Yarp:
 		pass
 
 	def writeProtectedPortFuncsDecl(self, p):
-		pass
+		self.writePort(p)
 
 # Public
 	def writePublicVarsDecl(self):
@@ -117,7 +117,7 @@ class Yarp:
 		pass
 
 	def writePublicPortFuncsDecl(self, p):
-		self.writePort(p)
+		pass
 
 # Constructor implementation
 	def writeConstructorImplStart(self):
@@ -177,35 +177,38 @@ class Yarp:
 	def writePortDeclaration(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
-			if param_kind == idltype.tk_sequence:
-				#self.st.out("// private storage for " + port_name + "Values;")
-				#self.st.out("std::vector<" + seq_type + "> *" + port_name + "Values;")
-				self.st.out(param_type + " *" + port + "Values;")
-			else:
-				#self.st.out("// private storage for " + port_name + "Value")
-				self.st.out("int " + port + "Value;")
-		#self.st.out("// the port " + port_name + " itself") 
+			self.st.out(param_type + " " + port_name + "Buf;")
+			
+#			if param_kind == idltype.tk_sequence:
+#				#self.st.out("// private storage for " + port_name + "Values;")
+#				#self.st.out("std::vector<" + seq_type + "> *" + port_name + "Values;")
+#				self.st.out(param_type + " *" + port + "Values;")
+#			else:
+#				#self.st.out("// private storage for " + port_name + "Value")
+#				self.st.out("int " + port + "Value;")
+#		#self.st.out("// the port " + port_name + " itself") 
 		self.st.out("yarp::os::BufferedPort<yarp::os::Bottle> *" + port + ";")
 
 	# In the constructor we allocate the port, most often we will need a new BufferedPort with a 
 	# Bottle as parameter. In case of a sequence we need to allocate a corresponding vector
 	def writePortAllocation(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
-		if param_kind == idltype.tk_sequence:
-			if port_direction == rur.Direction.IN:
-				self.st.out(port + "Values = new " + param_type + "();")
-			param_type = "Bottle"
-		else:
-			param_type = "Bottle"
-		self.st.out(port + " = new BufferedPort<" + param_type + ">();")
+#		if param_kind == idltype.tk_sequence:
+#			if port_direction == rur.Direction.IN:
+#				self.st.out(port + "Values = new " + param_type + "();")
+#			param_type = "Bottle"
+#		else:
+#			param_type = "Bottle"
+#		self.st.out(port + " = new BufferedPort<" + param_type + ">();")
+		self.st.out(port + " = new BufferedPort<Bottle>();")
 
 	# In the constructor we allocate the port, most often we will need a new BufferedPort with a 
 	# Bottle as parameter. In case of a sequence we need to allocate a corresponding vector
 	def writePortDestruction(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
-		if param_kind == idltype.tk_sequence:
-			if port_direction == rur.Direction.IN:
-				self.st.out("delete " + port + "Values;")
+#		if param_kind == idltype.tk_sequence:
+#			if port_direction == rur.Direction.IN:
+#				self.st.out("delete " + port + "Values;")
 		self.st.out("delete " + port + ";")
 
 	# In the Init() routine we open the port and if necessary set the default values of the corresponding
@@ -225,11 +228,12 @@ class Yarp:
 	# The result of this function will be a list of such functions
 	# All these functions will be "protected" and can be accessed only by the class or its parent.
 	def writePort(self, p):
-		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
-		if port_direction == rur.Direction.IN:
-			self.vs.writePortFunctionSignature(p)
-		if port_direction == rur.Direction.OUT: 
-			self.vs.writePortFunctionSignature(p)
+#		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
+#		if port_direction == rur.Direction.IN:
+#			self.vs.writePortFunctionSignature(p)
+#		if port_direction == rur.Direction.OUT: 
+#			self.vs.writePortFunctionSignature(p)
+		self.vs.writePortFunctionSignature(p)
 
 	def writePortImpl(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
@@ -245,7 +249,7 @@ class Yarp:
 		elif seq_type == "double":
 			capValue = "Double"
 		if port_direction == rur.Direction.IN:
-			self.vs.writePortFunctionSignatureImpl(p)
+			self.vs.writePortFunctionSignatureImpl(p, rur.Direction.IN)
 			if param_kind == idltype.tk_sequence:
 				self.st.out("Bottle *b = " + port + "->read(blocking);")
 				self.st.out("if (b != NULL) {")
@@ -255,13 +259,13 @@ class Yarp:
 				self.st.out(port + "Values->push_back(b->get(i).as" + capValue + "());")
 				self.vs.writeFunctionEnd()
 				self.vs.writeFunctionEnd()
-				self.st.out("return " + port + "Values;")
+				self.st.out("return &" + port + "Buf;")
 			else:
 				self.st.out("Bottle *b = " + port + "->read(blocking);") 
 				self.st.out("if (b != NULL) { ")
 				self.st.inc_indent()
 				self.st.out(port + "Value = b->get(0).as" + capValue + "();") 
-				self.st.out("return &" + port + "Value;") 
+				self.st.out("return &" + port + "Buf;") 
 				self.vs.writeFunctionEnd()
 				self.st.out("return NULL;")
 			#else:
@@ -270,7 +274,7 @@ class Yarp:
 			self.st.out("")
 		
 		if port_direction == rur.Direction.OUT:
-			self.vs.writePortFunctionSignatureImpl(p)
+			self.vs.writePortFunctionSignatureImpl(p, rur.Direction.OUT)
 			if param_kind == idltype.tk_sequence:
 				self.st.out("Bottle &" + param_name + "Prepare = " + port + "->prepare();")
 				self.st.out(param_name + "Prepare.clear();")

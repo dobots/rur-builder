@@ -87,19 +87,24 @@ class RurModule(visit.Visit) :
 			else:
 				self.st.out("// Remark: check if result is not NULL")
 			self.st.out(param_type + " *read" + port_name + "(bool blocking=false);")
+			self.st.out("")
 		if port_direction == Direction.OUT:
 			self.st.out("// Write to this function and assume it ends up at some receiving module")
 			if param_kind == idltype.tk_sequence:
 				self.st.out("bool write" + port_name + "(const " + param_type + " &" + param_name + ");")
 			else:
 				self.st.out("bool write" + port_name + "(const " + param_type + " " + param_name + ");")
+			self.st.out("")
 
-	def writePortFunctionSignatureImpl(self, portobject):
+	def writePortFunctionSignatureImpl(self, portobject, direction):
 		port, port_name, port_direction, param_name, param_type, param_kind, port_pragmas, port_comments = self.getPortConfiguration(portobject)
-		if port_direction == Direction.IN:
+		if direction == Direction.IN:
 			self.st.out(param_type + "* " + self.classname + "::read" + port_name + "(bool blocking) {")
-		if port_direction == Direction.OUT:
-			self.st.out("bool " + self.classname + "::write" + port_name + "(const " + param_type + " " + param_name + ") {")
+		if direction == Direction.OUT:
+			if param_kind == idltype.tk_sequence:
+				self.st.out("bool " + self.classname + "::write" + port_name + "(const " + param_type + " &" + param_name + ") {")
+			else:
+				self.st.out("bool " + self.classname + "::write" + port_name + "(const " + param_type + " " + param_name + ") {")
 		self.st.inc_indent()
 
 	def writeFunctionEnd(self):

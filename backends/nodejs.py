@@ -225,10 +225,11 @@ class NodeJS:
 
 	def writePort(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
-		if port_direction == rur.Direction.IN:
-			self.vs.writePortFunctionSignature(p)
-		if port_direction == rur.Direction.OUT: 
-			self.vs.writePortFunctionSignature(p)
+#		if port_direction == rur.Direction.IN:
+#			self.vs.writePortFunctionSignature(p)
+#		if port_direction == rur.Direction.OUT:
+#			self.vs.writePortFunctionSignature(p)
+		self.vs.writePortFunctionSignature(p)
 
 	def writePortBufInitiation(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
@@ -486,7 +487,7 @@ class NodeJS:
 	def writePortImpl(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
-			self.vs.writePortFunctionSignatureImpl(p)
+			self.vs.writePortFunctionSignatureImpl(p, rur.Direction.IN)
 			self.st.out("pthread_mutex_lock(&destroyMutex);")
 			self.st.out("bool destroy = DestroyFlag;")
 			self.st.out("pthread_mutex_unlock(&destroyMutex);")
@@ -520,7 +521,7 @@ class NodeJS:
 			self.st.out("")
 			
 		if port_direction == rur.Direction.OUT:
-			self.vs.writePortFunctionSignatureImpl(p)
+			self.vs.writePortFunctionSignatureImpl(p, rur.Direction.OUT)
 			self.st.out("pthread_mutex_lock(&destroyMutex);")
 			self.st.out("bool destroy = DestroyFlag;")
 			self.st.out("pthread_mutex_unlock(&destroyMutex);")
@@ -529,7 +530,7 @@ class NodeJS:
 			self.st.out("return false;")
 			self.st.dec_indent()
 			self.st.out("pthread_mutex_lock(&writeMutex" + port_name + ");")
-			self.st.out("writeBuf" + port_name + ".push_back(output);")
+			self.st.out("writeBuf" + port_name + ".push_back(" + param_name + ");")
 			self.st.out("pthread_mutex_unlock(&writeMutex" + port_name + ");")
 			self.st.out("async" + port_name + ".data = (void*) this;")
 			self.st.out("uv_async_send(&async" + port_name + ");")
