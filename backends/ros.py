@@ -54,11 +54,17 @@ class Ros:
 		print "#include <pthread.h>"
 		print "// ros specific headers"
 		print "#include <ros/ros.h>"
-		print "#include \"std_msgs/String.h\""
-		print "#include \"std_msgs/Int16.h\""
-		print "#include \"std_msgs/Int32.h\""
-		print "#include \"std_msgs/Float32.h\""
-		print "#include \"std_msgs/Float64.h\""
+
+		print "#include \"AimInt16.h\""
+		print "#include \"AimInt32.h\""
+		print "#include \"AimFloat32.h\""
+		print "#include \"AimFloat64.h\""
+		print "#include \"AimString.h\""
+		print "#include \"AimInt16Seq.h\""
+		print "#include \"AimInt32Seq.h\""
+		print "#include \"AimFloat32Seq.h\""
+		print "#include \"AimFloat64Seq.h\""
+		print "#include \"AimStringSeq.h\""
 
 	def writeIncludesImpl(self):
 		pass
@@ -127,7 +133,7 @@ class Ros:
 
 # Constructor implementation
 	def writeConstructorImplStart(self):
-		self.st.out(self.classname + "::" + self.classname + "():")
+		self.st.out(self.vs.classname + "::" + self.vs.classname + "():")
 
 	def writeConstructorImplInit(self):
 		pass
@@ -161,7 +167,10 @@ class Ros:
 
 	def writeInitImpl(self):
 		self.st.out("std::string nodeName = \"" + self.vs.classname.lower() + "\" + cliParam->module_id;")
-		self.st.out("ros::init(1, NULL, nodeName);")
+		self.st.out("int argc(1);")
+		self.st.out("char** argv(NULL);")
+		self.st.out("ros::init(argc, argv, nodeName);")
+#		self.st.out("ros::init(1, NULL, nodeName);")
 		self.st.out("ros::NodeHandle rosHandle;")
 		self.st.out("ros::NodeHandle rosPrivHandle(\"~\");")
 #		self.st.out("std::string portName;")
@@ -208,11 +217,11 @@ class Ros:
 			# What is this last ,i ?
 			#self.st.out(port + "Sub = rosHandle.advertise< >(portName.c_str(), 1000, boost::bind(&" + self.vs.classname + "::" + port_name + "CB, this, _1, i));")
 			#self.st.out(port + "Sub = rosHandle.advertise< >(portName.c_str(), 1000, boost::bind(&" + self.vs.classname + "::" + port_name + "CB, this, _1));")
-			self.st.out(port + "Sub = rosHandle.subscribe<" + self.getRosMsgType(param_type, param_kind) + ">(\"" + port.lower() + "\", 1000, boost::bind(&" + self.vs.classname + "::" + port + "CB, this, _1));")
+			self.st.out(port + "Sub = rosHandle.subscribe< " + self.getRosMsgType(param_type, param_kind) + ">(\"" + port.lower() + "\", 1000, boost::bind(&" + self.vs.classname + "::" + port + "CB, this, _1));")
 		if port_direction == rur.Direction.OUT:
 			#self.st.out("portName = \"" + port_name + "\" + cliParam->module_id;")
 			#self.st.out(port + "Pub = rosHandle.advertise<" + self.getRosMsgType(param_type, param_kind) + ">(portName.c_str(), 1000);")
-			self.st.out(port + "Pub = rosPrivHandle.advertise<" + self.getRosMsgType(param_type, param_kind) + ">(\"" + port.lower() + "\", 1000);")
+			self.st.out(port + "Pub = rosPrivHandle.advertise< " + self.getRosMsgType(param_type, param_kind) + ">(\"" + port.lower() + "\", 1000);")
 
 	def writePort(self, p):
 		self.vs.writePortFunctionSignature(p)
@@ -220,19 +229,20 @@ class Ros:
 	def writeReadCB(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
-			self.st.out("void " + port + "CB(const " + self.getRosMsgType(param_type, param_kind) + "::ConsPtr& msg);")
+			self.st.out("void " + port + "CB(const " + self.getRosMsgType(param_type, param_kind) + "::ConstPtr& msg);")
 
 	def writeReadCBImpl(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
-			self.st.out("void " + self.vs.classname + "::" + port + "CB(const " + self.getRosMsgType(param_type, param_kind) + "::ConsPtr& msg) {")
+			self.st.out("void " + self.vs.classname + "::" + port + "CB(const " + self.getRosMsgType(param_type, param_kind) + "::ConstPtr& msg) {")
 			self.st.inc_indent()
 			self.st.out("pthread_mutex_lock(&" + port + "Mutex);")
 			if (param_kind == idltype.tk_sequence):
-				self.st.out(param_type + "read;")
+				self.st.out(param_type + " read;")
 				self.st.out(port + "Buf.push_back(read);")
-				self.st.out(self.getRosMsgType(param_type, param_kind) + "::const_iterator it;")
-				self.st.out("for it=msg->data.begin(); it!=msg->data.end(); ++it)")
+				#self.st.out(self.getRosMsgType(param_type, param_kind) + "::const_iterator it;")
+				self.st.out(self.getRosMsgIterType(param_type, param_kind) + " it;")
+				self.st.out("for (it=msg->data.begin(); it!=msg->data.end(); ++it)")
 				self.st.inc_indent()
 				#self.st.out("read.push_back(*it);")
 				self.st.out(port + "Buf.back().push_back(*it);")
@@ -294,18 +304,33 @@ class Ros:
 	def writePortAllocationImpl(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
-			self.st.out("pthread_mutex_init(&" + port + "Mutex), NULL);")
+			self.st.out("pthread_mutex_init(&" + port + "Mutex, NULL);")
 
 	def getRosMsgType(self, param_type, param_kind):
 		if param_kind == idltype.tk_sequence:
 			seq_type = self.vs.getSeqType(param_type)
 		else:
 			seq_type = param_type
+		
+		ret = ""
 		if seq_type == "int":
-			return "std_msgs::Int32"
+			ret = "::" + self.vs.classname + "::AimInt32"
+		#elif seq_type == "long":
+		#	return self.vs.classname + "::AimInt32"
 		elif seq_type == "float":
-			return "std_msgs::Float32"
+			ret = "::" + self.vs.classname + "::AimFloat32"
 		elif seq_type == "double":
-			return "std_msgs::Float64"
+			ret = "::" + self.vs.classname + "::AimFloat64"
 		elif seq_type == "string":
-			return "std_msgs::String"
+			ret = "::" + self.vs.classname + "::AimString"
+		
+		if param_kind == idltype.tk_sequence:
+			return ret + "Seq"
+		return ret
+
+	def getRosMsgIterType(self, param_type, param_kind):
+		if param_kind != idltype.tk_sequence:
+			return
+		type = self.getRosMsgType(param_type, param_kind)
+		return "std::vector< " + type[0:-3] + ">::const_iterator"
+

@@ -54,7 +54,8 @@ class MainVisitor (rur.RurModule):
 		print "#include \"" + self.classname + ".h\""
 
 	def writeUsingNamespace(self):
-		print "using namespace " + self.namespace + ";"
+#		print "using namespace " + self.namespace + ";"
+		print "namespace " + self.namespace + " {"
 
 # Before class
 	def writeBeforeClassVarsDecl(self):

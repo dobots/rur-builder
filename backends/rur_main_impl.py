@@ -108,6 +108,8 @@ class Main_impl (Main):
 			b.writeFuncsImpl()
 		for p in self.vs.portList:
 			self.beList[p.beStr].writePortFuncsImpl(p)
+		
+		print "} // namespace"
 
 # Initialize this parser
 def run(tree, args):
