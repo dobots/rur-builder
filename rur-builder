@@ -33,9 +33,16 @@ fi
 idl_file=""
 backend="standard"
 backend_path="/usr/share/rur/backends"
+helper_path="/usr/share/rur/helper"
 output_basename=""
 output_path=""
 verbose=0
+
+if [ ! -r ${helper_path}/color.sh ]; then
+	echo "[#] Error: No such file: ${helper_path}/color.sh"
+	exit 1
+fi
+source ${helper_path}/color.sh
 
 while getopts "hb:i:p:n:o:v" OPTION
 do
@@ -115,13 +122,17 @@ if [[ $OMNIIDL == "" ]]; then
 	exit 2
 fi
 
-echo "[#] We will use backend \"$backend\""
+#msg_info() {
+#	echo -e "\033[32m[#] $(date +"%x %R") - Info: $1\033[0m"
+#}
+
+
+#echo "[#] We will use backend \"$backend\""
+msg_info "We will use backend \"$backend\""
 
 # Run the omniidl backend
+msg_debug "Running: omniidl -p${backend_path} -brur_main_head -Wb${backend} -K \"${idl_file}\" > ${output_file_head_tmp}"
 omniidl -p${backend_path} -brur_main_head -Wb${backend} -K "${idl_file}" > ${output_file_head_tmp}
-omniidl -p${backend_path} -brur_main_impl -Wb${backend} -K "${idl_file}" > ${output_file_impl_tmp}
-#echo "omniidl -p${backend_path} -bmain_head -Wb${backend} -K \"${idl_file}\" > ${output_file_head_tmp}"
-#echo "omniidl -p${backend_path} -bmain_impl -Wb${backend} -K \"${idl_file}\" > ${output_file_impl_tmp}"
 #omniidl -p${backend_path} -b${backend} "${idl_file}" > ${output_file_tmp}
 
 # Copy it to normal header file only if they are different
@@ -130,15 +141,21 @@ if [ -a ${output_file_head_tmp} ]; then
 	if [ -a ${output_file_head} ]; then
 		if ! diff -q ${output_file_head_tmp} ${output_file_head} > /dev/null ; then
 			mv -f ${output_file_head_tmp} ${output_file_head}
+			msg_info "Generated new file: ${output_file_head}"
 		else
 			rm ${output_file_head_tmp}
 		fi
 	else
 		mv -f ${output_file_head_tmp} ${output_file_head}
+		msg_info "Generated new file: ${output_file_head}"
 	fi
 else
-	echo "[#] Error. Something went wrong with generating the header file with the rur-builder"
+	msg_error "Something went wrong with generating the header file with the rur-builder"
 fi
+
+# Run the omniidl backend
+msg_debug "Running: omniidl -p${backend_path} -brur_main_impl -Wb${backend} -K \"${idl_file}\" > ${output_file_impl_tmp}"
+omniidl -p${backend_path} -brur_main_impl -Wb${backend} -K "${idl_file}" > ${output_file_impl_tmp}
 
 # Copy it to normal implementation file only if they are different
 if [ -a ${output_file_impl_tmp} ]; then
@@ -146,13 +163,15 @@ if [ -a ${output_file_impl_tmp} ]; then
 	if [ -a ${output_file_impl} ]; then
 		if ! diff -q ${output_file_impl_tmp} ${output_file_impl} > /dev/null ; then
 			mv -f ${output_file_impl_tmp} ${output_file_impl}
+			msg_info "Generated new file: ${output_file_impl}"
 		else
 			rm ${output_file_impl_tmp}
 		fi
 	else
 		mv -f ${output_file_impl_tmp} ${output_file_impl}
+		msg_info "Generated new file: ${output_file_impl}"
 	fi
 else
-	echo "[#] Error. Something went wrong with generating the implementation file with the rur-builder"
+	msg_error "Something went wrong with generating the implementation file with the rur-builder"
 fi
 
