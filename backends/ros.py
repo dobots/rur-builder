@@ -167,9 +167,9 @@ class Ros:
 
 	def writeInitImpl(self):
 		self.st.out("std::string nodeName = \"" + self.vs.classname.lower() + "\" + cliParam->module_id;")
-		self.st.out("int argc(1);")
+		self.st.out("int argc(0);")
 		self.st.out("char** argv(NULL);")
-		self.st.out("ros::init(argc, argv, nodeName);")
+		self.st.out("ros::init(argc, argv, nodeName, ros::init_options::NoSigintHandler);")
 #		self.st.out("ros::init(1, NULL, nodeName);")
 		self.st.out("ros::NodeHandle rosHandle;")
 		self.st.out("ros::NodeHandle rosPrivHandle(\"~\");")
