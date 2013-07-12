@@ -177,7 +177,7 @@ class Yarp:
 	def writePortDeclaration(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
-			self.st.out(param_type + " " + port_name + "Buf;")
+			self.st.out(param_type + " " + port + "Buf;")
 			
 #			if param_kind == idltype.tk_sequence:
 #				#self.st.out("// private storage for " + port_name + "Values;")
@@ -256,7 +256,7 @@ class Yarp:
 				self.st.inc_indent()
 				self.st.out("for (int i = 0; i < b->size(); ++i) {")
 				self.st.inc_indent()
-				self.st.out(port + "Values->push_back(b->get(i).as" + capValue + "());")
+				self.st.out(port + "Buf.push_back(b->get(i).as" + capValue + "());")
 				self.vs.writeFunctionEnd()
 				self.vs.writeFunctionEnd()
 				self.st.out("return &" + port + "Buf;")
@@ -264,7 +264,7 @@ class Yarp:
 				self.st.out("Bottle *b = " + port + "->read(blocking);") 
 				self.st.out("if (b != NULL) { ")
 				self.st.inc_indent()
-				self.st.out(port + "Value = b->get(0).as" + capValue + "();") 
+				self.st.out(port + "Buf = b->get(0).as" + capValue + "();") 
 				self.st.out("return &" + port + "Buf;") 
 				self.vs.writeFunctionEnd()
 				self.st.out("return NULL;")
