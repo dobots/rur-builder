@@ -40,7 +40,7 @@ from standard import Standard
 from yarp import Yarp
 from nodejs import NodeJS
 #from zeromq import ZeroMQ
-#from ros import Ros
+from ros import Ros
 
 class Main:
 	def __init__(self, st, tree, args):
@@ -90,5 +90,7 @@ class Main:
 #			return ZeroMQ(self.st, self.vs, portList)
 		elif (string == "nodejs"):
 			return NodeJS(self.st, self.vs, portList)
+		elif (string == "ros"):
+			return Ros(self.st, self.vs, portList)
 		else:
 			raise Exception("Invalid backend: \"" + string +"\"")

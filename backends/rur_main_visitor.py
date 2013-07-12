@@ -54,7 +54,8 @@ class MainVisitor (rur.RurModule):
 		print "#include \"" + self.classname + ".h\""
 
 	def writeUsingNamespace(self):
-		print "using namespace " + self.namespace + ";"
+#		print "using namespace " + self.namespace + ";"
+		print "namespace " + self.namespace + " {"
 
 # Before class
 	def writeBeforeClassVarsDecl(self):
@@ -150,6 +151,7 @@ class MainVisitor (rur.RurModule):
 
 	def writeInitImpl(self):
 		self.st.out("cliParam->module_id = name;") # TODO: this should be dynamical, as in writeStructDeclarations()
+		self.st.out("")
 
 	def writeInitImplPort(self, p):
 		pass
