@@ -55,16 +55,16 @@ class Ros:
 		print "// ros specific headers"
 		print "#include <ros/ros.h>"
 
-		print "#include \"AimInt16.h\""
-		print "#include \"AimInt32.h\""
-		print "#include \"AimFloat32.h\""
-		print "#include \"AimFloat64.h\""
-		print "#include \"AimString.h\""
-		print "#include \"AimInt16Seq.h\""
-		print "#include \"AimInt32Seq.h\""
-		print "#include \"AimFloat32Seq.h\""
-		print "#include \"AimFloat64Seq.h\""
-		print "#include \"AimStringSeq.h\""
+		print "#include \"" + self.vs.classname + "/RurInt16.h\""
+		print "#include \"" + self.vs.classname + "/RurInt32.h\""
+		print "#include \"" + self.vs.classname + "/RurFloat32.h\""
+		print "#include \"" + self.vs.classname + "/RurFloat64.h\""
+		print "#include \"" + self.vs.classname + "/RurString.h\""
+		print "#include \"" + self.vs.classname + "/RurInt16Seq.h\""
+		print "#include \"" + self.vs.classname + "/RurInt32Seq.h\""
+		print "#include \"" + self.vs.classname + "/RurFloat32Seq.h\""
+		print "#include \"" + self.vs.classname + "/RurFloat64Seq.h\""
+		print "#include \"" + self.vs.classname + "/RurStringSeq.h\""
 
 	def writeIncludesImpl(self):
 		pass
@@ -245,7 +245,7 @@ class Ros:
 				self.st.out("for (it=msg->data.begin(); it!=msg->data.end(); ++it)")
 				self.st.inc_indent()
 				#self.st.out("read.push_back(*it);")
-				self.st.out(port + "Buf.back().push_back(*it);")
+				self.st.out(port + "Buf.back().push_back(it->data);")
 				self.st.dec_indent()
 			else:
 				self.st.out(port + "Buf.push_back(msg->data);")
@@ -283,11 +283,13 @@ class Ros:
 			self.vs.writePortFunctionSignatureImpl(p, rur.Direction.OUT)
 			self.st.out(self.getRosMsgType(param_type, param_kind) + " msg;")
 			if param_kind == idltype.tk_sequence:
+				self.st.out(self.getRosMsgSeqType(param_type, param_kind) + " data;")
 				self.st.out(param_type + "::const_iterator it;")
-				self.st.out("for (it=" + param_name + ".begin(); it!=" + param_name + ".end(); ++it)")
+				self.st.out("for (it=" + param_name + ".begin(); it!=" + param_name + ".end(); ++it) {")
 				self.st.inc_indent()
-				self.st.out("msg.data.push_back(*it);")
-				self.st.dec_indent()
+				self.st.out("data.data = *it;")
+				self.st.out("msg.data.push_back(data);")
+				self.vs.writeFunctionEnd()
 			else:
 				self.st.out("msg.data = " + param_name + ";")
 			self.st.out(port + "Pub.publish(msg);")
@@ -306,24 +308,25 @@ class Ros:
 		if port_direction == rur.Direction.IN:
 			self.st.out("pthread_mutex_init(&" + port + "Mutex, NULL);")
 
-	def getRosMsgType(self, param_type, param_kind):
+	def getRosMsgSeqType(self, param_type, param_kind):
 		if param_kind == idltype.tk_sequence:
 			seq_type = self.vs.getSeqType(param_type)
 		else:
 			seq_type = param_type
 		
-		ret = ""
 		if seq_type == "int":
-			ret = "::" + self.vs.classname + "::AimInt32"
+			return "::" + self.vs.classname + "::RurInt32"
 		#elif seq_type == "long":
-		#	return self.vs.classname + "::AimInt32"
+		#	return "::" + self.vs.classname + "::RurInt32"
 		elif seq_type == "float":
-			ret = "::" + self.vs.classname + "::AimFloat32"
+			return "::" + self.vs.classname + "::RurFloat32"
 		elif seq_type == "double":
-			ret = "::" + self.vs.classname + "::AimFloat64"
+			return "::" + self.vs.classname + "::RurFloat64"
 		elif seq_type == "string":
-			ret = "::" + self.vs.classname + "::AimString"
-		
+			return "::" + self.vs.classname + "::RurString"
+
+	def getRosMsgType(self, param_type, param_kind):
+		ret = self.getRosMsgSeqType(param_type, param_kind)
 		if param_kind == idltype.tk_sequence:
 			return ret + "Seq"
 		return ret
@@ -331,6 +334,5 @@ class Ros:
 	def getRosMsgIterType(self, param_type, param_kind):
 		if param_kind != idltype.tk_sequence:
 			return
-		type = self.getRosMsgType(param_type, param_kind)
-		return "std::vector< " + type[0:-3] + ">::const_iterator"
+		return "std::vector< " + self.getRosMsgSeqType(param_type, param_kind) + ">::const_iterator"
 
