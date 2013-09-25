@@ -49,23 +49,58 @@ class Ros:
 ##########################################################################################
 
 # Includes
+	
 	def writeIncludes(self):
 		print "#include <deque>"
 		print "#include <pthread.h>"
 		print "// ros specific headers"
 		print "#include <ros/ros.h>"
 
-		print "#include \"" + self.vs.classname + "/RurInt16.h\""
-		print "#include \"" + self.vs.classname + "/RurInt32.h\""
-		print "#include \"" + self.vs.classname + "/RurFloat32.h\""
-		print "#include \"" + self.vs.classname + "/RurFloat64.h\""
-		print "#include \"" + self.vs.classname + "/RurString.h\""
-		print "#include \"" + self.vs.classname + "/RurInt16Seq.h\""
-		print "#include \"" + self.vs.classname + "/RurInt32Seq.h\""
-		print "#include \"" + self.vs.classname + "/RurFloat32Seq.h\""
-		print "#include \"" + self.vs.classname + "/RurFloat64Seq.h\""
-		print "#include \"" + self.vs.classname + "/RurStringSeq.h\""
+ 		print "#include <std_msgs/Float64MultiArray.h>"
+# 		print "#include <std_msgs/Duration.h>"
+# 		print "#include <std_msgs/String.h>"
+# 		print "#include <std_msgs/Byte.h>"
+# 		print "#include <std_msgs/trait_macstd_msgs.h>"
+# 		print "#include <std_msgs/UInt8.h>"
+# 		print "#include <std_msgs/MultiArrayLayout.h>"
+# 		print "#include <std_msgs/Header.h>"
+# 		print "#include <std_msgs/Int32MultiArray.h>"
+ 		print "#include <std_msgs/Int16.h>"
+# 		print "#include <std_msgs/Bool.h>"
+# 		print "#include <std_msgs/Char.h>"
+ 		print "#include <std_msgs/Int16MultiArray.h>"
+# 		print "#include <std_msgs/UInt16MultiArray.h>"
+ 		print "#include <std_msgs/Float32MultiArray.h>"
+ 		print "#include <std_msgs/Int32.h>"
+# 		print "#include <std_msgs/Int8MultiArray.h>"
+# 		print "#include <std_msgs/ColorRGBA.h>"
+# 		print "#include <std_msgs/Int64MultiArray.h>"
+# 		print "#include <std_msgs/Int64.h>"
+# 		print "#include <std_msgs/UInt32MultiArray.h>"
+# 		print "#include <std_msgs/Int8.h>"
+# 		print "#include <std_msgs/MultiArrayDimension.h>"
+# 		print "#include <std_msgs/UInt64MultiArray.h>"
+# 		print "#include <std_msgs/UInt32.h>"
+# 		print "#include <std_msgs/UInt16.h>"
+# 		print "#include <std_msgs/UInt8MultiArray.h>"
+# 		print "#include <std_msgs/ByteMultiArray.h>"
+ 		print "#include <std_msgs/Float64.h>"
+# 		print "#include <std_msgs/Time.h>"
+# 		print "#include <std_msgs/Empty.h>"
+#  		print "#include <std_msgs/UInt64.h>"
+ 		print "#include <std_msgs/Float32.h>"
 
+# 		print "#include \"" + self.vs.classname + "/RurInt16.h\""
+# 		print "#include \"" + self.vs.classname + "/RurInt32.h\""
+# 		print "#include \"" + self.vs.classname + "/RurFloat32.h\""
+# 		print "#include \"" + self.vs.classname + "/RurFloat64.h\""
+# 		print "#include \"" + self.vs.classname + "/RurString.h\""
+# 		print "#include \"" + self.vs.classname + "/RurInt16Seq.h\""
+# 		print "#include \"" + self.vs.classname + "/RurInt32Seq.h\""
+# 		print "#include \"" + self.vs.classname + "/RurFloat32Seq.h\""
+# 		print "#include \"" + self.vs.classname + "/RurFloat64Seq.h\""
+# 		print "#include \"" + self.vs.classname + "/RurStringSeq.h\""
+	
 	def writeIncludesImpl(self):
 		pass
 		#print "#include <" + self.vs.classname + "Ext.h>"
@@ -75,10 +110,12 @@ class Ros:
 		#self.st.out("using namespace ...;")
 
 # Class
+	
 	def writeClassStart(self):
 		self.st.out("class " + self.vs.classname + " {")
 
 # Before class
+	
 	def writeBeforeClassVarsDecl(self):
 		pass
 
@@ -92,6 +129,7 @@ class Ros:
 		pass
 
 # Private
+	
 	def writePrivateVarsDecl(self):
 		pass
 
@@ -106,6 +144,7 @@ class Ros:
 		pass
 
 # Protected
+	
 	def writeProtectedVarsDecl(self):
 		pass
 
@@ -119,6 +158,7 @@ class Ros:
 		self.writePort(p)
 
 # Public
+	
 	def writePublicVarsDecl(self):
 		pass
 
@@ -132,6 +172,7 @@ class Ros:
 		pass
 
 # Constructor implementation
+	
 	def writeConstructorImplStart(self):
 		self.st.out(self.vs.classname + "::" + self.vs.classname + "():")
 
@@ -152,6 +193,7 @@ class Ros:
 		pass
 
 # Destructor implementation
+	
 	def writeDestructorImplStart(self):
 		self.st.out(self.classname + "::~" + self.classname + "() {")
 
@@ -162,6 +204,7 @@ class Ros:
 		pass
 
 # Init implementation
+	
 	def writeInitImplStart(self):
 		self.st.out("void " + self.classname + "::Init(std::string & name) {")
 
@@ -180,6 +223,7 @@ class Ros:
 		self.writePortInitImpl(p)
 
 # Implementation
+	
 	def writeFuncsImpl(self):
 		pass
 
@@ -196,6 +240,7 @@ class Ros:
 
 	# We need a vector of ports or publishers or whatever is used by the middleware
 	# inputs are read by "subscribe", and written by "advertise" and "publish"  
+	
 	def writePortAllocation(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
@@ -229,7 +274,8 @@ class Ros:
 	def writeReadCB(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
-			self.st.out("void " + port + "CB(const " + self.getRosMsgType(param_type, param_kind) + "::ConstPtr& msg);")
+# 			self.st.out("void " + port + "CB(const " + self.getRosMsgType(param_type, param_kind) + "::ConstPtr& msg);")
+ 			self.st.out("void " + port + "CB(const " + self.getRosMsgType(param_type, param_kind) + "::ConstPtr& msg);")
 
 	def writeReadCBImpl(self, p):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
@@ -242,10 +288,14 @@ class Ros:
 				self.st.out(port + "Buf.push_back(read);")
 				#self.st.out(self.getRosMsgType(param_type, param_kind) + "::const_iterator it;")
 				self.st.out(self.getRosMsgIterType(param_type, param_kind) + " it;")
-				self.st.out("for (it=msg->data.begin(); it!=msg->data.end(); ++it)")
+				#======================DEBUG=========================================
+				# self.st.out("std::cout << msg->data.size() << std::endl;")
+				#===============================================================
+				self.st.out("for (it=msg->data.begin(); it!=msg->data.end(); ++it) {")
 				self.st.inc_indent()
 				#self.st.out("read.push_back(*it);")
-				self.st.out(port + "Buf.back().push_back(it->data);")
+				self.st.out(port + "Buf.back().push_back(*it);")
+				self.st.out("}")
 				self.st.dec_indent()
 			else:
 				self.st.out(port + "Buf.push_back(msg->data);")
@@ -257,8 +307,11 @@ class Ros:
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
 			self.vs.writePortFunctionSignatureImpl(p, rur.Direction.IN)
+			#========================This was forgotten=====================
+			self.st.out("ros::spinOnce();")
+			#===============================================================
+			self.st.out("pthread_mutex_lock(&" + port + "Mutex);")
 			if (param_kind == idltype.tk_sequence):
-				self.st.out("pthread_mutex_lock(&" + port + "Mutex);")
 				self.st.out("if (!" + port + "Buf.empty()) {")
 				self.st.inc_indent()
 				self.st.out(port + "Val.swap(" + port + "Buf.front());")
@@ -267,7 +320,6 @@ class Ros:
 				self.st.out("pthread_mutex_unlock(&" + port + "Mutex);")
 				self.st.out("return &" + port + "Val;")
 			else:
-				self.st.out("pthread_mutex_lock(&" + port + "Mutex);")
 				self.st.out("if (" + port + "Buf.empty()) {")
 				self.st.inc_indent()
 				self.st.out("pthread_mutex_unlock(&" + port + "Mutex); // Don't forget to unlock!")
@@ -315,24 +367,26 @@ class Ros:
 			seq_type = param_type
 		
 		if seq_type == "int":
-			return "::" + self.vs.classname + "::RurInt32"
-		#elif seq_type == "long":
-		#	return "::" + self.vs.classname + "::RurInt32"
+			return "std_msgs::Int32"
+		elif seq_type == "long":
+			return "std_msgs::Int32"
 		elif seq_type == "float":
-			return "::" + self.vs.classname + "::RurFloat32"
+			return "std_msgs::Float32"
 		elif seq_type == "double":
-			return "::" + self.vs.classname + "::RurFloat64"
+			return "std_msgs::Float64"
 		elif seq_type == "string":
-			return "::" + self.vs.classname + "::RurString"
+			return "std_msgs::String"
 
 	def getRosMsgType(self, param_type, param_kind):
 		ret = self.getRosMsgSeqType(param_type, param_kind)
 		if param_kind == idltype.tk_sequence:
-			return ret + "Seq"
+			if param_type == 'string':
+				raise Exception("ERROR: String arrays are not supported by ROS.")
+			return ret + "MultiArray"
 		return ret
 
 	def getRosMsgIterType(self, param_type, param_kind):
 		if param_kind != idltype.tk_sequence:
 			return
-		return "std::vector< " + self.getRosMsgSeqType(param_type, param_kind) + ">::const_iterator"
+		return "std::vector< " + self.vs.getSeqType(param_type) + ">::const_iterator"
 
