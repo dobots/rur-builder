@@ -39,7 +39,7 @@ from rur_main_visitor import MainVisitor
 from standard import Standard
 from yarp import Yarp
 from nodejs import NodeJS
-#from zeromq import ZeroMQ
+from zeromq import ZeroMQ
 from ros import Ros
 
 class Main:
@@ -86,8 +86,8 @@ class Main:
 			return Standard(self.st, self.vs, portList)
 		elif (string == "yarp"):
 			return Yarp(self.st, self.vs, portList)
-#		elif (string == "zeromq"):
-#			return ZeroMQ(self.st, self.vs, portList)
+		elif (string == "zeromq"):
+			return ZeroMQ(self.st, self.vs, portList)
 		elif (string == "nodejs"):
 			return NodeJS(self.st, self.vs, portList)
 		elif (string == "ros"):
