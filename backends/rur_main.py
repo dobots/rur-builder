@@ -61,7 +61,7 @@ class Main:
 			beStr = ""
 			for pr in port_comments:
 				#print(pr)
-				if (pr.split(" ")[1] == "backend"):
+				if (pr.split(" ")[1] == "middleware"):
 					beStr = string.strip(pr.split(" ")[2]) # Strip trailing and leading whitespace
 					break
 			if (beStr == ""):
