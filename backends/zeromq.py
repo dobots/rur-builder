@@ -92,7 +92,7 @@ class ZeroMQ:
 		self.st.out("std::vector<zmq_socket_ext*> zmq_sockets;")
 
 	def writePrivateFuncsDecl(self):
-		self.writeHelperFunctions()
+		pass
 
 	def writePrivatePortVarsDecl(self, p):
 		self.writePortDeclaration(p)
@@ -108,7 +108,7 @@ class ZeroMQ:
 		self.st.out("char debug;")
 
 	def writeProtectedFuncsDecl(self):
-		pass
+		self.writeHelperFunctions()
 
 	def writeProtectedPortVarsDecl(self, p):
 		pass
@@ -412,18 +412,18 @@ class ZeroMQ:
 		self.st.out("HandleCommand();")
 
 	def writeHelperFunctions(self):
-		function_body = '''/**
- * The resolve function can be called by modules to get a new socket (and if you want host name and port). It can also
- * be used by the connector, to bind to these previously set up sockets.
- */
-void Resolve(pns_record & record);
-void SendAck(zmq::socket_t *s, bool state);
-bool ReceiveAck(zmq::socket_t *s, bool & state, bool blocking);
-char* GetReply(zmq::socket_t *s, bool & state, bool blocking, int & reply_size);
-void SendRequest(zmq::socket_t *s, bool & state, bool blocking, std::string str);
-void HandleCommand();
-void Connect(std::string source, std::string target);
-zmq::socket_t* GetSocket(std::string name);
+		function_body = '''  /**
+   * The resolve function can be called by modules to get a new socket (and if you want host name and port). It can also
+   * be used by the connector, to bind to these previously set up sockets.
+   */
+  void Resolve(pns_record & record);
+  void SendAck(zmq::socket_t *s, bool state);
+  bool ReceiveAck(zmq::socket_t *s, bool & state, bool blocking);
+  char* GetReply(zmq::socket_t *s, bool & state, bool blocking, int & reply_size);
+  void SendRequest(zmq::socket_t *s, bool & state, bool blocking, std::string str);
+  void HandleCommand();
+  void Connect(std::string source, std::string target);
+  zmq::socket_t* GetSocket(std::string name);
 '''
 		print function_body
 
