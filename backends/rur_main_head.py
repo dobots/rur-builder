@@ -126,4 +126,3 @@ def run(tree, args):
 	
 	# And then write everything to the to-be-generated header file
 	main.writeAll()
-
