@@ -76,7 +76,7 @@ class Ros:
 # 		print "#include <std_msgs/ColorRGBA.h>"
 # 		print "#include <std_msgs/Int64MultiArray.h>"
 # 		print "#include <std_msgs/Int64.h>"
-# 		print "#include <std_msgs/UInt32MultiArray.h>"
+ 		print "#include <std_msgs/UInt32MultiArray.h>"
 # 		print "#include <std_msgs/Int8.h>"
 # 		print "#include <std_msgs/MultiArrayDimension.h>"
 # 		print "#include <std_msgs/UInt64MultiArray.h>"
