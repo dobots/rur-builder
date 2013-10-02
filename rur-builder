@@ -15,17 +15,11 @@ echo "Usage: $0 options"
 echo ""
 echo "OPTIONS:"
 echo "    -h        Show this help message"
-#echo "    -b arg    Backend (default: standard)"
 echo "    -i arg    IDL file (example: ~/MyModule/aim-config/MyModule.idl)"
 echo "    -p arg    Path to the backends (example: /usr/share/rur/backends)"
-#echo "    -o arg    Output path (example: ~/MyModule/aim-core)"
-#echo "    -n arg    Output basename (example: MyModule)"
 echo "    -o arg    Output file (example: ~/MyModule/aim-core/inc/MyModule.h)"
 echo "    -b arg    Backend (example: rur_main_head)"
 echo "    -m arg    Middleware (default: standard)"
-
-#echo "    -H arg    Output interface header file (default: <output_basename>.h)"
-#echo "    -I arg    Output interface implementation file (default: <output_basename>.cpp)"
 echo "    -v        Be more verbose"
 }
 
@@ -37,9 +31,14 @@ fi
 idl_file=""
 backend="standard"
 backend_path="/usr/share/rur/backends"
-output_basename=""
-output_path=""
+helper_path="/usr/share/rur/helper"
 verbose=0
+
+if [ ! -r ${helper_path}/color.sh ]; then
+	echo "[#] Error: No such file: ${helper_path}/color.sh"
+	exit 1
+fi
+source ${helper_path}/color.sh
 
 while getopts "hi:p:o:b:m:v" OPTION
 do
@@ -75,12 +74,17 @@ done
 
 
 if [ ! -r $idl_file ]; then
-	echo "[#] Error. No such file: $idl_file"
+	msg_echo "No such file: $idl_file"
 	exit 1
 fi
 
 if [ ! -d $backend_path ]; then
-	echo "[#] Error. No such dir: $backend_path"
+	msg_error "No such dir: $backend_path"
+	exit 1
+fi
+
+if [ -z ${output_file} ]; then
+	msg_error "No output file given."
 	exit 1
 fi
 
@@ -91,7 +95,7 @@ output_file_invalid=${output_file}.invalid
 
 OMNIIDL=$(which omniidl)
 if [[ $OMNIIDL == "" ]]; then
-	echo "[#] Error. There is no omniidl installed!"
+	msg_error "There is no omniidl installed!"
 	rm -f ${output_file_invalid}
 	if [ -a ${output_file}  ]; then
 		mv -f ${output_file} ${output_file_invalid}
@@ -99,26 +103,26 @@ if [[ $OMNIIDL == "" ]]; then
 	exit 2
 fi
 
-echo "[#] We will use backend \"$backend\""
+msg_info "We will use backend \"$backend\""
 
 # Run the omniidl backend
+msg_debug "Running: omniidl -p${backend_path} -b${backend} -Wb${middleware},${output_file},${backend_path} -K \"${idl_file}\" > ${output_file_tmp}"
 omniidl -p${backend_path} -b${backend} -Wb${middleware},${output_file},${backend_path} -K "${idl_file}" > ${output_file_tmp}
-#echo "omniidl -p${backend_path} -bmain_head -Wb${backend} -K \"${idl_file}\" > ${output_file_head_tmp}"
-#echo "omniidl -p${backend_path} -bmain_impl -Wb${backend} -K \"${idl_file}\" > ${output_file_impl_tmp}"
-#omniidl -p${backend_path} -b${backend} "${idl_file}" > ${output_file_tmp}
 
-# Copy it to normal header file only if they are different
+# Copy it to normal file only if they are different
 if [ -a ${output_file_tmp} ]; then
 	# Output file already exists
 	if [ -a ${output_file} ]; then
 		if ! diff -q ${output_file_tmp} ${output_file} > /dev/null ; then
 			mv -f ${output_file_tmp} ${output_file}
+			msg_info "Generated new file: ${output_file}"
 		else
 			rm ${output_file_tmp}
 		fi
 	else
 		mv -f ${output_file_tmp} ${output_file}
+		msg_info "Generated new file: ${output_file}"
 	fi
 else
-	echo "[#] Error. Something went wrong with generating the header file with the rur-builder"
+	msg_error "Something went wrong with generating the header file with the rur-builder"
 fi
