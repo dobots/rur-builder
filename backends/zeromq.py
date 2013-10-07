@@ -58,6 +58,7 @@ class ZeroMQ:
 		print "// zeromq specific headers"
 		print "#include <zmq.hpp>"
 		print "#include <json_spirit_reader.h>"
+		print "#include <pthread.h>"
 		print
 
 	def writeIncludesImpl(self):
@@ -88,11 +89,14 @@ class ZeroMQ:
 		self.st.out("zmq::socket_t *ns_socket;")
 		self.st.out("// standard control socket over which commands arrive to connect to some port for example")
 		self.st.out("zmq::socket_t *cmd_socket;")
+		self.st.out("pthread_t cmdThread;")
+		self.st.out("pthread_mutex_t cmdMutex;")
 		self.st.out("// standard control socket over which commands arrive to connect to some port for example")
 		self.st.out("std::vector<zmq_socket_ext*> zmq_sockets;")
 
 	def writePrivateFuncsDecl(self):
-		pass
+		self.writeReadCommandsHelper()
+		self.writeReadCommands()
 
 	def writePrivatePortVarsDecl(self, p):
 		self.writePortDeclaration(p)
@@ -167,6 +171,7 @@ class ZeroMQ:
 
 # Implementation
 	def writeFuncsImpl(self):
+		self.writeReadCommandsImpl()
 		self.writeHelperFunctionsImpl()
 
 	def writePortFuncsImpl(self, p):
@@ -240,6 +245,7 @@ class ZeroMQ:
 		if port_direction == rur.Direction.OUT:
 			self.st.out("zmq_socket_ext " + port + "Out;")
 #		self.st.out("zmq_socket_ext " + port + ";")
+		self.st.out("")
 
 	def writeCtorInit(self):
 		self.st.out("ns_socket(NULL),")
@@ -248,6 +254,31 @@ class ZeroMQ:
 
 	def writeCtor(self):
 		self.st.out("context = new zmq::context_t(1);")
+		self.st.out("pthread_mutex_init(&cmdMutex, NULL);")
+		self.st.out("pthread_create(&cmdThread, 0, readCommandsHelper, this);")
+
+	def writeReadCommandsHelper(self):
+		self.st.out("static void* readCommandsHelper(void* object) {")
+		self.st.inc_indent()
+#		self.st.out("static_cast<" + self.vs.classname + "*>(object)->ReadCommands();")
+		self.st.out("((" + self.vs.classname + "*)object)->readCommands();")
+		self.st.out("return NULL;")
+		self.vs.writeFunctionEnd()
+		self.st.out("")
+
+	def writeReadCommands(self):
+		self.st.out("void readCommands();")
+
+	def writeReadCommandsImpl(self):
+		self.st.out("void " + self.vs.classname + "::readCommands() {")
+		self.st.inc_indent()
+		self.st.out("while (true) {")
+		self.st.inc_indent()
+		self.st.out("HandleCommand();")
+#		self.st.out("sleep(1);")
+		self.vs.writeFunctionEnd()
+		self.vs.writeFunctionEnd()
+		self.st.out("")
 
 	# In the constructor we allocate the port, most often we will need a new BufferedPort with a 
 	# Bottle as parameter. In case of a sequence we need to allocate a corresponding vector
@@ -365,11 +396,16 @@ class ZeroMQ:
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
 			self.vs.writePortFunctionSignatureImpl(p, rur.Direction.IN)
-			self.st.out("// For now only int return values are supported")
+			self.st.out("pthread_mutex_lock(&cmdMutex);")
 			self.st.out("int reply_size = -1;")
 			self.st.out("char *reply = GetReply(" + port + "In.sock, " + port + "In.ready, blocking, reply_size);")
-			self.st.out("if (!" + port + "In.ready || !reply) return NULL;")
+			self.st.out("if (!" + port + "In.ready || !reply) {")
+			self.st.inc_indent()
+			self.st.out("pthread_mutex_unlock(&cmdMutex);")
+			self.st.out("return NULL;")
+			self.vs.writeFunctionEnd()
 			self.st.out("SendAck(" + port + "In.sock, " + port + "In.ready);")
+			self.st.out("pthread_mutex_unlock(&cmdMutex);")
 #			self.st.out("std::cout << \"reply_size = \" << reply_size << \" reply=\" << std::string(reply) << std::endl;")
 #			self.st.out('for (int i=0; i<reply_size; ++i) std::cout << +reply[i] << " ";')
 #			self.st.out("std::cout << std::endl;")
@@ -404,11 +440,13 @@ class ZeroMQ:
 			self.st.out("")
 		if port_direction == rur.Direction.OUT:
 			self.vs.writePortFunctionSignatureImpl(p, rur.Direction.OUT)
-			self.st.out("// For now only int return values are supported")
 #			self.st.out("if (!ReceiveGeneralRequest(" + portname + ", " + portname + "Ready, false)) return false;")
 			self.st.out("std::stringstream ss; ss.clear(); ss.str(\"\");")
 			if param_kind == idltype.tk_sequence:
-				self.st.out("if (" + param_name + ".empty()) return true;")
+				self.st.out("if (" + param_name + ".empty())")
+				self.st.inc_indent()
+				self.st.out("return true;")
+				self.st.dec_indent()
 				self.st.out(param_type + "::const_iterator it=" + param_name + ".begin();")
 				self.st.out("ss << *it++;")
 				self.st.out("for (; it!= " + param_name + ".end(); ++it)")
@@ -420,6 +458,7 @@ class ZeroMQ:
 			else:
 				self.st.out("ss << " + param_name + "; // very dirty, no endianness, etc, just use the stream operator itself") 
 #				self.st.out("ss << (" + param_name + "& 0xFF) << (" + param_name + ">> 8); // little-endian") 
+			self.st.out("pthread_mutex_lock(&cmdMutex);")
 			self.st.out("bool state = " + port + "Out.ready;")
 #			self.st.out('std::cout << "sendrequest: " << ss.str() << " size: " << ss.str().size() << std::endl;')
 			self.st.out("SendRequest(" + port + "Out.sock, state, false, ss.str());")
@@ -431,9 +470,11 @@ class ZeroMQ:
 			self.st.out("if (ack_state) {")
 			self.st.inc_indent()
 			self.st.out(port + "Out.ready = true;")
+			self.st.out("pthread_mutex_unlock(&cmdMutex);")
 			self.st.out("return true;")
 			self.vs.writeFunctionEnd()
 			self.vs.writeFunctionEnd()
+			self.st.out("pthread_mutex_unlock(&cmdMutex);")
 			self.st.out("return false;")
 			self.vs.writeFunctionEnd()
 			self.st.out("")
@@ -530,6 +571,8 @@ bool ''' + self.vs.classname + '''::ReceiveAck(zmq::socket_t *s, bool & state, b
 }
   
 char* ''' + self.vs.classname + '''::GetReply(zmq::socket_t *s, bool & state, bool blocking, int & reply_size) {
+  if (s == NULL)
+    return NULL;
   zmq::message_t reply;
   char* result = NULL;
   reply_size = 0;
@@ -569,8 +612,9 @@ void ''' + self.vs.classname + '''::SendRequest(zmq::socket_t *s, bool & state, 
 void ''' + self.vs.classname + '''::HandleCommand() {
   int reply_size = -1;
   bool state = false;
-  char *reply = GetReply(cmd_socket, state, false, reply_size);
+  char *reply = GetReply(cmd_socket, state, true, reply_size);
   if (reply == NULL) return;
+  std::cout << "HandleCommand: " << std::string(reply, reply_size) << std::endl;
   if (reply_size < 2) std::cerr << "Error: Reply is not large for magic header + command string" << std::endl;
   char magic_value = reply[0];
   reply[reply_size-1] = \'\\0\';
@@ -579,6 +623,7 @@ void ''' + self.vs.classname + '''::HandleCommand() {
     int pos = name.find("->");
     if (pos == std::string::npos) {
       std::cerr << "Error: no -> separator in connect command" << std::endl;
+      return;
     }
     std::string source = name.substr(0, pos);
     std::string target = name.substr(pos+2); // todo: 
@@ -592,7 +637,12 @@ void ''' + self.vs.classname + '''::HandleCommand() {
 }
 
 void ''' + self.vs.classname + '''::Connect(std::string source, std::string target) {
+  pthread_mutex_lock(&cmdMutex);
   zmq::socket_t *s = GetSocket(source);
+  if (s == NULL) {
+    pthread_mutex_unlock(&cmdMutex);
+    return;
+  }
   pns_record t_record;
   t_record.name = "/resolve" + target;
   Resolve(t_record);
@@ -605,13 +655,14 @@ void ''' + self.vs.classname + '''::Connect(std::string source, std::string targ
   } catch (zmq::error_t &e) {
     std::cerr << "Error: Could not connect to " << target << ", because: " << e.what() << std::endl;
   }
+  pthread_mutex_unlock(&cmdMutex);
 }
 
 zmq::socket_t* ''' + self.vs.classname + '''::GetSocket(std::string name) {
   for (int i = 0; i < zmq_sockets.size(); ++i) {
     if (zmq_sockets[i]->name.find(name) != std::string::npos) return zmq_sockets[i]->sock;
   }
-  std::cerr << "Error: socket name could not be found!" << std::endl;
+  std::cerr << "Error: socket name could not be found! " << name << std::endl;
   return NULL;
   //assert(false); // todo, get the previously registered socket by name
 }
