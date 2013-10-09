@@ -4,6 +4,11 @@
 # Enables colors
 ################################################################################
 
+msg_prefix="#"
+msg_init() {
+	msg_prefix=$1
+}
+
 # Example usage:
 # echo -e ${RedF}This text will be red!${Reset}
 # echo -e ${BlueF}${BoldOn}This will be blue and bold!${BoldOff} - and this is just blue!${Reset}
@@ -27,18 +32,18 @@ colors() {
 colors
 
 msg_error() {
-	echo -e ${RedF}"[#] $(date +"%x %R") - Error: $1"${Reset}
+	echo -e ${RedF}"[$msg_prefix] $(date +"%x %R") - Error: $1"${Reset}
 }
 
 msg_warning() {
-	echo -e ${YellowF}"[#] $(date +"%x %R") - Warning: $1"${Reset}
+	echo -e ${YellowF}"[$msg_prefix] $(date +"%x %R") - Warning: $1"${Reset}
 }
 
 msg_info() {
-	echo -e ${GreenF}"[#] $(date +"%x %R") - Info: $1"${Reset}
+	echo -e ${GreenF}"[$msg_prefix] $(date +"%x %R") - Info: $1"${Reset}
 }
 
 msg_debug() {
-	echo -e ${BlueF}"[#] $(date +"%x %R") - Debug: $1"${Reset}
+	echo -e ${BlueF}"[$msg_prefix] $(date +"%x %R") - Debug: $1"${Reset}
 }
 

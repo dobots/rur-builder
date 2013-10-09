@@ -40,6 +40,8 @@ if [ ! -r ${helper_path}/color.sh ]; then
 fi
 source ${helper_path}/color.sh
 
+msg_init $program
+
 while getopts "hi:p:o:b:m:v" OPTION
 do
 	case $OPTION in

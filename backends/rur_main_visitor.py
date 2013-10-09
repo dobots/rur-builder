@@ -254,11 +254,13 @@ class MainVisitor (rur.RurModule):
 		self.st.out("const char* const channel[" + str(len(names)) + "] = {" + ', '.join(names) + "};")
 
 	def writeConstructor(self):
+		self.st.out("// Default constructor")
 		self.st.out(self.classname + "();")
 		self.st.out("")
 
 	def writeDestructor(self):
-		self.st.out("~" + self.classname + "();")
+		self.st.out("// Default destructor")
+		self.st.out("virtual " + "~" + self.classname + "();")
 		self.st.out("")
 
 	def writeInit(self):
@@ -277,7 +279,7 @@ class MainVisitor (rur.RurModule):
 
 	def writeTick(self):
 		self.st.out("// Overwrite this function with your own code")
-		self.st.out("virtual void Tick() {}")
+		self.st.out("virtual void Tick() = 0;")
 		self.st.out("")
 
 	def writeStop(self):
