@@ -64,7 +64,7 @@ class Ros:
 # 		print "#include <std_msgs/UInt8.h>"
 # 		print "#include <std_msgs/MultiArrayLayout.h>"
 # 		print "#include <std_msgs/Header.h>"
-# 		print "#include <std_msgs/Int32MultiArray.h>"
+ 		print "#include <std_msgs/Int32MultiArray.h>"
  		print "#include <std_msgs/Int16.h>"
 # 		print "#include <std_msgs/Bool.h>"
 # 		print "#include <std_msgs/Char.h>"
@@ -76,7 +76,7 @@ class Ros:
 # 		print "#include <std_msgs/ColorRGBA.h>"
 # 		print "#include <std_msgs/Int64MultiArray.h>"
 # 		print "#include <std_msgs/Int64.h>"
- 		print "#include <std_msgs/UInt32MultiArray.h>"
+# 		print "#include <std_msgs/UInt32MultiArray.h>"
 # 		print "#include <std_msgs/Int8.h>"
 # 		print "#include <std_msgs/MultiArrayDimension.h>"
 # 		print "#include <std_msgs/UInt64MultiArray.h>"
@@ -335,12 +335,13 @@ class Ros:
 			self.vs.writePortFunctionSignatureImpl(p, rur.Direction.OUT)
 			self.st.out(self.getRosMsgType(param_type, param_kind) + " msg;")
 			if param_kind == idltype.tk_sequence:
-				self.st.out(self.getRosMsgSeqType(param_type, param_kind) + " data;")
+#				self.st.out(self.getRosMsgSeqType(param_type, param_kind) + " data;")
 				self.st.out(param_type + "::const_iterator it;")
 				self.st.out("for (it=" + param_name + ".begin(); it!=" + param_name + ".end(); ++it) {")
 				self.st.inc_indent()
-				self.st.out("data.data = *it;")
-				self.st.out("msg.data.push_back(data);")
+#				self.st.out("data.data = *it;")
+#				self.st.out("msg.data.push_back(data);")
+				self.st.out("msg.data.push_back(*it);")
 				self.vs.writeFunctionEnd()
 			else:
 				self.st.out("msg.data = " + param_name + ";")
