@@ -55,8 +55,7 @@ rur-builder -i MyModule.idl -p /usr/share/rur/backends -b rur_main_head -m yarp 
 rur-builder -i MyModule.idl -p /usr/share/rur/backends -b rur_main_impl -m yarp -o MyModule.cpp
 ```
 
-Optional port options:
-By adding a comment "// middleware <middleware>" above the a port definition in the IDL file, the middleware for that port can be specified. Example:
+Optionally, the middleware for a single port can be specified by adding a comment above the a port definition in the IDL file. Example:
 ```c++
 // middleware yarp
 // Input from microphone in the form of an array
@@ -80,12 +79,44 @@ The RUR platform provides the glue using the IDL specification of a component to
 The RUR platform is similar to a recent effort, Genom3, generator of modules. However, contrary to Genom3 which decorates existing code with generic keywords that will be replaced by middleware-specific terms, the component code will not be touched by the RUR compiler. This means that the code is still compilable, syntax highlighting still works properly, and declarations and references can be found by the indexer (in e.g. Eclipse).
 
 ## Example
+An example IDL file:
+```C++
+// Recommended namespace "rur"
+module rur {
+
+// The command-line parameter (this struct is required)
+struct Param {
+  // multiple modules can be addressed in parallel, killed, etc. using "module_id"
+  string module_id;
+};
+
+// Typedef for array of integers
+typedef sequence<long> long_seq;
+
+// The public interface of this module
+interface testModule {
+  // Input from buttons
+  void Button(in int buttonNum);
+
+  // Input from microphone in the form of an array
+  void Microphone(in long_seq input);
+
+  // The audio output
+  void Audio(out long_seq output);
+
+  // Quality output
+  void Quality(out float fraction);
+};
+
+}; // End of namespace
+```
+
 An example that shows the first automatically generated structures, instances, and functions of a so-called ARTMAP module to be used in YARP middleware:
 
 ![alt text](https://github.com/dobots/rur-builder/raw/master/doc/rur_idl2yarp.jpg "IDL to YARP example")
 
 ## Relay backend
-When using the rur_main_relay backend, the whole module is supposed to be generated. This is handy to generate modules that split, merge or convert ports. To specify which input ports should be relayed to which output ports, the port name is used in the form: "<name>__<In/Out>[_<N>]". Ports with the same name are coupled: data read from "name__In" will be written to "name__Out". Merging and splitting is done by appending number N.
+When using the rur_main_relay backend, the whole module is supposed to be generated. This is handy to generate modules that split, merge or convert ports. To specify which input ports should be relayed to which output ports, the port name is used in the form: "name__In/Out_N". Ports with the same name are coupled: data read from "name__In" will be written to "name__Out". Merging and splitting is done by appending a number N.
 Examples:
 ```C++
 // Convert port from long to float
