@@ -29,6 +29,7 @@ sudo apt-get install omniidl
 
 The rur-builder itself can be installed by:
 ```bash
+git clone https://github.com/dobots/rur-builder.git
 cd rur-builder
 sudo make install
 ```
