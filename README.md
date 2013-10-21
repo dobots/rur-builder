@@ -10,6 +10,8 @@ RurBuilder uses omniIDL and supports the following middlewares:
 2. ROS, Robotic Operating System
 3. ZeroMQ, ZeroMQ is the middleware used in the Storm data processing topology of Twitter
 4. AgentScape (to be implemented)
+5. Android (using the android messenger class)
+6. NodeJS (wrapper)
 
 ## Abstraction support
 The abstractions are written in IDL and look like a Java or C++ interface. The current abstractions allow for:
@@ -19,52 +21,119 @@ The abstractions are written in IDL and look like a Java or C++ interface. The c
 - definition of input parameters on the command-line
 - namespaces
 
+## Installation
+RurBuilder uses omniIDL, so firstly omniIDL has to be installed:
+```bash
+sudo apt-get install omniidl
+```
+
+The rur-builder itself can be installed by:
+```bash
+cd rur-builder
+sudo make install
+```
+
 ## Usage
-The RurBuilder can be used together with AIM (Artificial Intelligence Modules) utility tools:
+The rur-builder is a commandline tool with the following options:
+```bash
+    -h        Show this help message
+    -i arg    IDL file (example: ~/MyModule/aim-config/MyModule.idl)
+    -p arg    Path to the backends (example: /usr/share/rur/backends)
+    -o arg    Output file (example: ~/MyModule/aim-core/inc/MyModule.h)
+    -b arg    Backend (example: rur_main_head)
+    -m arg    Middleware (default: standard)
+    -v        Be more verbose
+```
+The different backends create different types of files.
+- rur_main_head Creates a header file (.h) for the module base class.
+- rur_main_impl Creates an implementation file (.cpp) for the module base class.
+- rur_main_relay Creates an implementation file that copies data from ports in to ports out. This is handy to create modules that split, merge or convert data. This currently only works in combination with the [AIM tools](https://github.com/dobots/aimtools). Usage of this backend can be found below.
 
-- aimcreate-pkg: Creates a new module from template. This contains a "manifest.xml" file for use in ROS, a "CMakeLists.txt" file for use in YARP, a default Makefile, a few scripts to build and run using "default.mk" to retrieve the location of the RurBuilder and which backend to use.
-- aimregister: Register new module. This extracts ports (input and output) and command-line parameters. It can be used by for example the AIM GUI to visualize the right number of ports with the proper names.
-- aimrun: Run a module. The command-line parameters it expects must be part of the IDL description. One parameter that is required, is a "module_id" to be able to run multiple instances of the same AI module.
-- aimstop: Stops a module. This can be done using the "module_id" defined at aimrun.
-- aimconnect: Connects port/channel on one module to port on another module. The additional abstraction of ports/channels above only modules gives enough flexibility for most real-life situations. It is clear that the middleware only sets up how the AI modules are connected to each other, but does not dictate how the data is processed through this network of modules. This is left to the middleware.
+Typical usage:
+```bash
+rur-builder -i MyModule.idl -p /usr/share/rur/backends -b rur_main_head -m yarp -o MyModule.h
+rur-builder -i MyModule.idl -p /usr/share/rur/backends -b rur_main_impl -m yarp -o MyModule.cpp
+```
 
-Obviously, these tools are similar to the ones used in the ROS environment. Instead of creating ROS nodes, AI modules are created, etc.
+Optionally, the middleware for a single port can be specified by adding a comment above the a port definition in the IDL file. Example:
+```c++
+// middleware yarp
+// Input from microphone in the form of an array
+void Audio(in long_seq input);
+```
 
 ## Design Cycle with RUR
 The common design cycle is like this:
 
-- Write an .idl file for your component, can be a new or existing component. The component can contain several files, say we have "esn.cpp".
-- Run the RUR compiler in the middleware-agnostic mode. This provides a language-specific header file "rur_esn.h".
-- We make the "esn.cpp" file network-aware by making use of the port, channels, message structs defined in the "rur_esn.h" file.
-- Run the RUR compiler in a middleware-specific mode. For example we run a yarp server on the robot. The "rur_esn.h" file will now be rewritten by yarp-specific function calls. Nothing needs to be changed in the "esn.cpp" file.
-- Run the RUR compiler for another type of middleware, e.g. ROS. Now instead of the function calls for yarp, the header file will contain code for ros.
+- Write an .idl file for your module, which can be a new or existing module. The module can contain several files, say we have "esn.cpp".
+- Run the rur-builder using the standard middleware to generate a C++ header and implementation file "rur_esn.h" and "rur_esn.cpp.
+- We make the "esn.cpp" file network-aware by making use of the read/write port functions defined in the "rur_esn.h" file.
+- Run the rur-builder in a middleware-specific mode. For example we run a yarp server on the robot. Generate "rur_esn.h" and "rur_esn.cpp" using "yarp" as middleware. The files will now be rewritten by yarp-specific function calls. Nothing needs to be changed in the "esn.cpp" file.
+- Run the rur-builder for another type of middleware, e.g. ROS. Now instead of the function calls for yarp, the files will contain code for ros.
 
 ## Alternatives
-
-Programming code is separated into different components. For example a "particle filter", an "echo state network", a "reinforcement learning module", or other type of components that provide algorithms required for robotic applications. Each component is described in a language-independent manner using a well-known variant of the CORBA IDL, interface description language. An IDL is normally used to have a language neural interface between components, such that these can be written in multiple languages. Specific instances of IDLs (besides the CORBA one) are Protocol Buffers (Google), Avro (Hadoop, Apache), Thrift (Facebook, Apache), and WSDL (tailored to web services).
+Programming code is separated into different modules. For example a "particle filter", an "echo state network", a "reinforcement learning module", or other type of modules that provide algorithms required for robotic applications. Each module is described in a language-independent manner using a well-known variant of the CORBA IDL, interface description language. An IDL is normally used to have a language neural interface between components, such that these can be written in multiple languages. Specific instances of IDLs (besides the CORBA one) are Protocol Buffers (Google), Avro (Hadoop, Apache), Thrift (Facebook, Apache), and WSDL (tailored to web services).
 
 The RUR platform provides the glue using the IDL specification of a component to generate a language-specific header file, which can be used to use this component in a certain middleware. So, from an IDL specification, code is generated that allows a component written in C to be used on a robot running the YARP middleware. However, using this same IDL specification a component written in Java can be used within the JADE multi-agent system. Of course, if the programmer allows a component to be used from within Java or C - by SWIG e.g. - this will make it possible to use the same component in either programming language, but this is not the task of the RUR platform.
 
 The RUR platform is similar to a recent effort, Genom3, generator of modules. However, contrary to Genom3 which decorates existing code with generic keywords that will be replaced by middleware-specific terms, the component code will not be touched by the RUR compiler. This means that the code is still compilable, syntax highlighting still works properly, and declarations and references can be found by the indexer (in e.g. Eclipse).
 
-
-## Installation
-
-The rur-builder itself can be installed by:
-
-    sudo make install
-
-It does not need to be build, because it exists out of bash and Python scripts. To actually use the rur-builder it is highly recommend to install the AIM tools, follow for that the installation instructions at the ![the aim tools](https://github.com/mrquincle/aimtools "aimtools") repository.
-
 ## Example
+An example IDL file:
+```C++
+// Recommended namespace "rur"
+module rur {
+
+// The command-line parameter (this struct is required)
+struct Param {
+  // multiple modules can be addressed in parallel, killed, etc. using "module_id"
+  string module_id;
+};
+
+// Typedef for array of integers
+typedef sequence<long> long_seq;
+
+// The public interface of this module
+interface testModule {
+  // Input from buttons
+  void Button(in int buttonNum);
+
+  // Input from microphone in the form of an array
+  void Microphone(in long_seq input);
+
+  // The audio output
+  void Audio(out long_seq output);
+
+  // Quality output
+  void Quality(out float fraction);
+};
+
+}; // End of namespace
+```
+
 An example that shows the first automatically generated structures, instances, and functions of a so-called ARTMAP module to be used in YARP middleware:
 
-![alt text](https://github.com/mrquincle/rur-builder/raw/master/doc/rur_idl2yarp.jpg "IDL to YARP example")
+![alt text](https://github.com/dobots/rur-builder/raw/master/doc/rur_idl2yarp.jpg "IDL to YARP example")
 
-You can find many examples in the ![the aim modules](https://github.com/mrquincle/aim_modules "aim modules") repository.
+## Relay backend
+When using the rur_main_relay backend, the whole module is supposed to be generated. This is handy to generate modules that split, merge or convert ports. To specify which input ports should be relayed to which output ports, the port name is used in the form: "name__In/Out_N". Ports with the same name are coupled: data read from "name__In" will be written to "name__Out". Merging and splitting is done by appending a number N.
+Examples:
+```C++
+// Convert port from long to float
+void Audio__In(in long input);
+void Audio__Out(out float output);
 
-## Visualisation
-The RurBuilder is integrated with the AIM GUI at https://github.com/mrquincle/ThreeNodes.js. This is a work in progress, and currently not the main focus.
+// Merge ports and convert long to float
+void Sample__In_0(in long input);
+void Sample__In_1(in long input);
+void Sample__Out(out float output);
+
+// Split port
+void Temperature__In(in long input);
+void Temperature__Out_0(out long output);
+void Temperature__Out_1(out long output);
+void Temperature__Out_2(out long output);
+```
 
 ## Copyrights
 The copyrights (2012) belong to:
