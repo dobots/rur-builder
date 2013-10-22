@@ -22,17 +22,29 @@ The abstractions are written in IDL and look like a Java or C++ interface. The c
 - namespaces
 
 ## Installation
-RurBuilder uses omniIDL, so firstly omniIDL has to be installed:
+RurBuilder uses OmniIDL, so firstly OmniIDL has to be installed:
+
+<img src="https://raw.github.com/dobots/rur-builder/master/docs/logos/ubuntu.png" alt="Ubuntu" style="width: 16px;"/> 
+Install OmniIDL via apt-get 
 ```bash
 sudo apt-get install omniidl
 ```
-
-The rur-builder itself can be installed by:
+<img src="https://raw.github.com/dobots/rur-builder/master/docs/logos/mac_os.png" alt="Mac OS X" style="width: 16px;"/> 
+Or install OmniIDL via homebrew
 ```bash
+brew install omniorb
+```
+
+Install rur-builder, by cloning, and running make:
+```bash
+cd ~/Downloads # Or some other directory
 git clone https://github.com/dobots/rur-builder.git
 cd rur-builder
+make 
 sudo make install
 ```
+
+The rur-builder is now installed in `/usr/bin` and the backends in `/usr/share/rur`. 
 
 ## Usage
 The rur-builder is a commandline tool with the following options:
@@ -72,14 +84,7 @@ The common design cycle is like this:
 - Run the rur-builder in a middleware-specific mode. For example we run a yarp server on the robot. Generate "rur_esn.h" and "rur_esn.cpp" using "yarp" as middleware. The files will now be rewritten by yarp-specific function calls. Nothing needs to be changed in the "esn.cpp" file.
 - Run the rur-builder for another type of middleware, e.g. ROS. Now instead of the function calls for yarp, the files will contain code for ros.
 
-## Alternatives
-Programming code is separated into different modules. For example a "particle filter", an "echo state network", a "reinforcement learning module", or other type of modules that provide algorithms required for robotic applications. Each module is described in a language-independent manner using a well-known variant of the CORBA IDL, interface description language. An IDL is normally used to have a language neural interface between components, such that these can be written in multiple languages. Specific instances of IDLs (besides the CORBA one) are Protocol Buffers (Google), Avro (Hadoop, Apache), Thrift (Facebook, Apache), and WSDL (tailored to web services).
-
-The RUR platform provides the glue using the IDL specification of a component to generate a language-specific header file, which can be used to use this component in a certain middleware. So, from an IDL specification, code is generated that allows a component written in C to be used on a robot running the YARP middleware. However, using this same IDL specification a component written in Java can be used within the JADE multi-agent system. Of course, if the programmer allows a component to be used from within Java or C - by SWIG e.g. - this will make it possible to use the same component in either programming language, but this is not the task of the RUR platform.
-
-The RUR platform is similar to a recent effort, Genom3, generator of modules. However, contrary to Genom3 which decorates existing code with generic keywords that will be replaced by middleware-specific terms, the component code will not be touched by the RUR compiler. This means that the code is still compilable, syntax highlighting still works properly, and declarations and references can be found by the indexer (in e.g. Eclipse).
-
-## Example
+## Examples
 An example IDL file:
 ```C++
 // Recommended namespace "rur"
@@ -116,7 +121,7 @@ An example that shows the first automatically generated structures, instances, a
 
 ![alt text](https://github.com/dobots/rur-builder/raw/master/doc/rur_idl2yarp.jpg "IDL to YARP example")
 
-## Relay backend
+### Relay backend
 When using the rur_main_relay backend, the whole module is supposed to be generated. This is handy to generate modules that split, merge or convert ports. To specify which input ports should be relayed to which output ports, the port name is used in the form: "name__In/Out_N". Ports with the same name are coupled: data read from "name__In" will be written to "name__Out". Merging and splitting is done by appending a number N.
 Examples:
 ```C++
@@ -135,6 +140,13 @@ void Temperature__Out_0(out long output);
 void Temperature__Out_1(out long output);
 void Temperature__Out_2(out long output);
 ```
+
+## Alternatives
+Programming code is separated into different modules. For example a "particle filter", an "echo state network", a "reinforcement learning module", or other type of modules that provide algorithms required for robotic applications. Each module is described in a language-independent manner using a well-known variant of the CORBA IDL, interface description language. An IDL is normally used to have a language neural interface between components, such that these can be written in multiple languages. Specific instances of IDLs (besides the CORBA one) are Protocol Buffers (Google), Avro (Hadoop, Apache), Thrift (Facebook, Apache), and WSDL (tailored to web services).
+
+The RUR platform provides the glue using the IDL specification of a component to generate a language-specific header file, which can be used to use this component in a certain middleware. So, from an IDL specification, code is generated that allows a component written in C to be used on a robot running the YARP middleware. However, using this same IDL specification a component written in Java can be used within the JADE multi-agent system. Of course, if the programmer allows a component to be used from within Java or C - by SWIG e.g. - this will make it possible to use the same component in either programming language, but this is not the task of the RUR platform.
+
+The RUR platform is similar to a recent effort, Genom3, generator of modules. However, contrary to Genom3 which decorates existing code with generic keywords that will be replaced by middleware-specific terms, the component code will not be touched by the RUR compiler. This means that the code is still compilable, syntax highlighting still works properly, and declarations and references can be found by the indexer (in e.g. Eclipse).
 
 ## Copyrights
 The copyrights (2012) belong to:
