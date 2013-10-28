@@ -242,12 +242,16 @@ class Yarp:
 			seq_type = self.vs.getSeqType(param_type)
 		else:
 			seq_type = param_type
+
 		if seq_type == "int":
 			capValue = "Int"
 		elif seq_type == "float":
 			capValue = "Double" # floats will be communicated as doubles
 		elif seq_type == "double":
 			capValue = "Double"
+		elif seq_type == "std::string":
+			capValue = "String"
+
 		if port_direction == rur.Direction.IN:
 			self.vs.writePortFunctionSignatureImpl(p, rur.Direction.IN)
 			if param_kind == idltype.tk_sequence:

@@ -56,6 +56,7 @@ class Visit (idlvisitor.AstVisitor, idlvisitor.TypeVisitor):
 	# The mapping from IDL types to C/C++ types, see e.g. that "long" becomes "int"
 	ttsMap = {
 		idltype.tk_void:       "void",
+		idltype.tk_string:     "string",
 		idltype.tk_short:      "short",
 		idltype.tk_long:       "int",
 		idltype.tk_ushort:     "unsigned short",
@@ -129,7 +130,6 @@ class Visit (idlvisitor.AstVisitor, idlvisitor.TypeVisitor):
 		return param_type
 
 	def getParamKind(self, param):
-		#return param.paramType().kind()
 		return param.paramType().unalias().kind()
 
 	def getMemberType(self, member):
