@@ -239,7 +239,24 @@ import android.util.Log;
 		self.st.out("bundle.putInt(\"id\", 0); // TODO: adjustable id, multiple modules")
 		self.st.out("msg.setData(bundle);")
 		self.st.out("msgSend(msg);")
-# register ports here
+		
+		for p in self.vs.portList:
+			if (p.beStr == "android"):
+				port, port_name, port_direction, param_name, param_type, param_kind, port_pragmas, port_comments = self.vs.getPortConfiguration(p)
+				if port_direction == rur.Direction.IN:
+					self.st.out("{")
+					self.st.inc_indent()
+					self.st.out("Message msgPort = Message.obtain(null, MSG_SET_MESSENGER);")
+					self.st.out("msgPort.replyTo = mPort" + port_name + "InMessenger;")
+					self.st.out("Bundle bundlePort = new Bundle();")
+					self.st.out("bundlePort.putString(\"module\", MODULE_NAME);")
+					self.st.out("bundlePort.putInt(\"id\", 0); // TODO: adjustable id, multiple modules")
+					self.st.out("bundlePort.putString(\"port\", \"" + port_name + "\");")
+					self.st.out("msgPort.setData(bundlePort);")
+					self.st.out("msgSend(mToMsgService, msgPort);")
+					self.vs.writeFunctionEnd()
+					self.st.out("")
+		
 		self.st.out("")
 		self.st.out("Log.i(TAG, \"Connected to MsgService: \" + mToMsgService.toString());")
 		self.vs.writeFunctionEnd()
@@ -263,7 +280,17 @@ import android.util.Log;
 		self.st.out("switch (msg.what) {")
 		self.st.out("case MSG_SET_MESSENGER:")
 		self.st.inc_indent()
-# set ports here
+		
+		# set ports here
+		for p in self.vs.portList:
+			if (p.beStr == "android"):
+				port, port_name, port_direction, param_name, param_type, param_kind, port_pragmas, port_comments = self.vs.getPortConfiguration(p)
+				if port_direction == rur.Direction.OUT:
+					self.st.out("if (msg.getData().getString(\"port\").equals(\"" + port_name + "\"))")
+					self.st.inc_indent()
+					self.st.out("mPort" + port_name + "OutMessenger = msg.replyTo;")
+					self.st.dec_indent()
+		
 		self.st.out("break;")
 		self.st.dec_indent()
 		self.st.out("case MSG_STOP:")
@@ -302,9 +329,12 @@ import android.util.Log;
 			self.st.inc_indent()
 			
 			if param_kind == idltype.tk_sequence:
+				self.st.out(self.getMessengerType(param_type, param_kind) + " readVal = msg.getData()." + self.getMessengerGetType(param_type, param_kind) + "(\"data\");")
+				self.st.out(self.getJavaType(param_type, param_kind) + " bufVal = new " + self.getJavaType(param_type, param_kind) + "(readVal.length);")
+				self.st.out("Log.i(TAG, \"msg: \" + readVal.toString());")
 				self.st.out("synchronized(mPort" + port_name + "InBuffer) {")
 				self.st.inc_indent()
-				self.st.out("// todo")
+				self.st.out("mPort" + port_name + "InBuffer.add(bufVal);")
 			else:
 				self.st.out(self.getJavaType(param_type, param_kind) + " readVal = msg.getData()." + self.getMessengerGetType(param_type, param_kind) + "(\"data\");")
 				self.st.out("Log.i(TAG, \"msg: \" + readVal);")
@@ -402,9 +432,16 @@ import android.util.Log;
 				return "Integer"
 			return param_type[0].upper() + param_type[1:]
 
+	def getMessengerType(self, param_type, param_kind):
+		if param_kind == idltype.tk_sequence:
+			return self.vs.getSeqType(param_type) + "[]"
+		else:
+			return param_type
+
 	def getMessengerGetType(self, param_type, param_kind):
 		if param_kind == idltype.tk_sequence:
-			return "todo"
+			seqType = self.vs.getSeqType(param_type)
+			return "get" + seqType[0].upper() + seqType[1:] + "Array"
 		else:
 			return "get" + param_type[0].upper() + param_type[1:]
 
