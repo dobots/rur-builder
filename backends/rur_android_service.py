@@ -142,29 +142,6 @@ import android.util.Log;
 	    return START_STICKY;
 	}
 	
-	// Copied from MsgService, should be an include?
-	public static final int MSG_REGISTER = 1;
-	public static final int MSG_UNREGISTER = 2;
-	public static final int MSG_SET_MESSENGER = 3;
-	public static final int MSG_START = 4;
-	public static final int MSG_STOP = 5;
-	public static final int MSG_SEND = 6;
-	public static final int MSG_XMPP_LOGIN = 7;
-	public static final int MSG_ADD_PORT = 8;
-	public static final int MSG_REM_PORT = 9;
-	public static final int MSG_XMPP_LOGGED_IN = 10;
-	public static final int MSG_XMPP_DISCONNECTED = 11;
-	public static final int MSG_PORT_DATA = 12;
-	public static final int MSG_USER_LOGIN = 13;
-	public static final int MSG_GET_MESSENGER = 14;
-		
-	public static final int DATATYPE_FLOAT = 1;
-	public static final int DATATYPE_FLOAT_ARRAY = 2;
-	public static final int DATATYPE_STRING = 3;
-	public static final int DATATYPE_IMAGE = 4;
-	public static final int DATATYPE_BINARY = 5;
-	
-	
 	void bindToMsgService() {
 		// Establish a connection with the service.  We use an explicit class name because there is no reason to be 
 		// able to let other applications replace our component.
@@ -179,7 +156,7 @@ import android.util.Log;
 		if (mMsgServiceIsBound) {
 			// If we have received the service, and registered with it, then now is the time to unregister.
 			if (mToMsgService != null) {
-				Message msg = Message.obtain(null, MSG_UNREGISTER);
+				Message msg = Message.obtain(null, AimProtocol.MSG_UNREGISTER);
 				Bundle bundle = new Bundle();
 				bundle.putString("module", MODULE_NAME);
 				bundle.putInt("id", 0); // TODO: adjustable id, multiple modules
@@ -233,7 +210,7 @@ import android.util.Log;
 		self.st.out("// we can use to interact with the service.  We are communicating with our service through an IDL")
 		self.st.out("// interface, so get a client-side representation of that from the raw service object.")
 		self.st.out("mToMsgService = new Messenger(service);")
-		self.st.out("Message msg = Message.obtain(null, MSG_REGISTER);")
+		self.st.out("Message msg = Message.obtain(null, AimProtocol.MSG_REGISTER);")
 		self.st.out("Bundle bundle = new Bundle();")
 		self.st.out("bundle.putString(\"module\", MODULE_NAME);")
 		self.st.out("bundle.putInt(\"id\", 0); // TODO: adjustable id, multiple modules")
@@ -246,7 +223,7 @@ import android.util.Log;
 				if port_direction == rur.Direction.IN:
 					self.st.out("{")
 					self.st.inc_indent()
-					self.st.out("Message msgPort = Message.obtain(null, MSG_SET_MESSENGER);")
+					self.st.out("Message msgPort = Message.obtain(null, AimProtocol.MSG_SET_MESSENGER);")
 					self.st.out("msgPort.replyTo = mPort" + port_name + "InMessenger;")
 					self.st.out("Bundle bundlePort = new Bundle();")
 					self.st.out("bundlePort.putString(\"module\", MODULE_NAME);")
@@ -278,7 +255,7 @@ import android.util.Log;
 		self.st.out("public void handleMessage(Message msg) {")
 		self.st.inc_indent()
 		self.st.out("switch (msg.what) {")
-		self.st.out("case MSG_SET_MESSENGER:")
+		self.st.out("case AimProtocol.MSG_SET_MESSENGER:")
 		self.st.inc_indent()
 		
 		# set ports here
@@ -293,7 +270,7 @@ import android.util.Log;
 		
 		self.st.out("break;")
 		self.st.dec_indent()
-		self.st.out("case MSG_STOP:")
+		self.st.out("case AimProtocol.MSG_STOP:")
 		self.st.inc_indent()
 		self.st.out("Log.i(TAG, \"stopping\");")
 		self.st.out("stopSelf();")
@@ -325,19 +302,25 @@ import android.util.Log;
 			self.st.out("public void handleMessage(Message msg) {")
 			self.st.inc_indent()
 			self.st.out("switch (msg.what) {")
-			self.st.out("case MSG_PORT_DATA:")
+			self.st.out("case AimProtocol.MSG_PORT_DATA:")
 			self.st.inc_indent()
 			
 			if param_kind == idltype.tk_sequence:
 				self.st.out(self.getMessengerType(param_type, param_kind) + " readVal = msg.getData()." + self.getMessengerGetType(param_type, param_kind) + "(\"data\");")
 				self.st.out(self.getJavaType(param_type, param_kind) + " bufVal = new " + self.getJavaType(param_type, param_kind) + "(readVal.length);")
-				self.st.out("Log.i(TAG, \"msg: \" + readVal.toString());")
+				self.st.out("String str = \"Read msg: \";")
+				self.st.out("for (int i=0; i<readVal.length; i++) {")
+				self.st.inc_indent()
+				self.st.out("bufVal.set(i, readVal[i]);")
+				self.st.out("str += readVal[i] + \" \";")
+				self.vs.writeFunctionEnd()
+				self.st.out("Log.i(TAG, str);")
 				self.st.out("synchronized(mPort" + port_name + "InBuffer) {")
 				self.st.inc_indent()
 				self.st.out("mPort" + port_name + "InBuffer.add(bufVal);")
 			else:
 				self.st.out(self.getJavaType(param_type, param_kind) + " readVal = msg.getData()." + self.getMessengerGetType(param_type, param_kind) + "(\"data\");")
-				self.st.out("Log.i(TAG, \"msg: \" + readVal);")
+				self.st.out("Log.i(TAG, \"Read msg: \" + readVal);")
 				self.st.out("synchronized(mPort" + port_name + "InBuffer) {")
 				self.st.inc_indent()
 				self.st.out("mPort" + port_name + "InBuffer.add(readVal);")
@@ -395,16 +378,25 @@ import android.util.Log;
 					self.st.inc_indent()
 					if param_kind == idltype.tk_sequence:
 						self.st.out("Log.i(TAG, \"output" + port_name + "=\" + output" + port_name + ".getVal().toString() + \" \");")
+						size = "(int) output" + port_name + ".getVal().size()"
+						self.st.out(self.getMessengerType(param_type, param_kind) + " data = new " + self.getMessengerType(param_type, param_kind, size) + ";")
 						self.st.out("for (int i=0; i<output" + port_name + ".getVal().size(); i++) {")
 						self.st.inc_indent()
+						self.st.out("data[i] = output" + port_name + ".getVal().get(i);")
 						self.st.out("Log.i(TAG, output" + port_name + ".getVal().get(i) + \" \");")
 						self.vs.writeFunctionEnd()
-					else:
-						self.st.out("Log.i(TAG, \"output" + port_name + "=\" + output" + port_name + ".getVal());")
-						self.st.out("Message msg = Message.obtain(null, MSG_PORT_DATA);")
+						self.st.out("Message msg = Message.obtain(null, AimProtocol.MSG_PORT_DATA);")
 						self.st.out("Bundle bundle = new Bundle();")
 						self.st.out("bundle.putInt(\"datatype\", " + self.getMessengerDataType(param_type, param_kind) + ");")
-						self.st.out("bundle.putFloat(\"data\", output" + port_name + ".getVal());")
+						self.st.out("bundle." + self.getMessengerPutType(param_type, param_kind) + "(\"data\", data);")
+						self.st.out("msg.setData(bundle);")
+						self.st.out("msgSend(mPort" + port_name + "OutMessenger, msg);")
+					else:
+						self.st.out("Log.i(TAG, \"output" + port_name + "=\" + output" + port_name + ".getVal());")
+						self.st.out("Message msg = Message.obtain(null, AimProtocol.MSG_PORT_DATA);")
+						self.st.out("Bundle bundle = new Bundle();")
+						self.st.out("bundle.putInt(\"datatype\", " + self.getMessengerDataType(param_type, param_kind) + ");")
+						self.st.out("bundle." + self.getMessengerPutType(param_type, param_kind) + "(\"data\", output" + port_name + ".getVal());")
 						self.st.out("msg.setData(bundle);")
 						self.st.out("msgSend(mPort" + port_name + "OutMessenger, msg);")
 					self.vs.writeFunctionEnd()
@@ -432,25 +424,43 @@ import android.util.Log;
 				return "Integer"
 			return param_type[0].upper() + param_type[1:]
 
-	def getMessengerType(self, param_type, param_kind):
+	def getMessengerType(self, param_type, param_kind, size=""):
 		if param_kind == idltype.tk_sequence:
-			return self.vs.getSeqType(param_type) + "[]"
+			return self.vs.getSeqType(param_type) + "[" + size + "]"
 		else:
 			return param_type
 
+# TODO: maybe use ArrayList instead?
 	def getMessengerGetType(self, param_type, param_kind):
 		if param_kind == idltype.tk_sequence:
 			seqType = self.vs.getSeqType(param_type)
 			return "get" + seqType[0].upper() + seqType[1:] + "Array"
 		else:
+			if (param_type == "string"):
+				return "getString"
 			return "get" + param_type[0].upper() + param_type[1:]
 
-	# TODO: this needs more types
+	def getMessengerPutType(self, param_type, param_kind):
+		if param_kind == idltype.tk_sequence:
+			seqType = self.vs.getSeqType(param_type)
+			return "put" + seqType[0].upper() + seqType[1:] + "Array"
+		else:
+			if (param_type == "string"):
+				return "putString"
+			return "put" + param_type[0].upper() + param_type[1:]
+
 	def getMessengerDataType(self, param_type, param_kind):
 		if param_kind == idltype.tk_sequence:
-			return "DATATYPE_FLOAT_ARRAY"
+			seqType = self.vs.getSeqType(param_type)
+			if (seqType == "int"):
+				return "AimProtocol.DATATYPE_INT_ARRAY"
+			return "AimProtocol.DATATYPE_FLOAT_ARRAY"
 		else:
-			return "DATATYPE_FLOAT"
+			if (param_type == "string"):
+				return "AimProtocol.DATATYPE_STRING"
+			if (param_type == "int"):
+				return "AimProtocol.DATATYPE_INT"
+			return "AimProtocol.DATATYPE_FLOAT"
 
 # Initialize this parser
 def run(tree, args):
