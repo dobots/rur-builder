@@ -41,11 +41,19 @@ class Main_head (Main):
 		for p in self.vs.portList:
 			port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 			channel = port_name.lower()
+			seq_type = self.getFullType(param_type, param_kind)
 			if port_direction == rur.Direction.IN:
-				self.st.out('in ' + channel + '0')
+				self.st.out('in ' + channel + ' ' + p.beStr + ' ' + seq_type)
 			if port_direction == rur.Direction.OUT:
-				self.st.out('out ' + channel + '0')
+				self.st.out('out ' + channel + ' ' + p.beStr + ' ' + seq_type)
 
+	# Get the full type, including sequence information
+	def getFullType(self, param_type, param_kind):
+		if param_kind == idltype.tk_sequence:
+			seq_type = self.vs.getSeqType(param_type) + 'array'
+		else:
+			seq_type = param_type
+		return seq_type;
 
 # Initialize this parser
 def run(tree, args):
