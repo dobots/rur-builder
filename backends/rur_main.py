@@ -41,6 +41,7 @@ from yarp import Yarp
 from nodejs import NodeJS
 from zeromq import ZeroMQ
 from ros import Ros
+from android import Android
 
 class Main:
 	def __init__(self, st, tree, args):
@@ -92,5 +93,7 @@ class Main:
 			return NodeJS(self.st, self.vs, portList)
 		elif (string == "ros"):
 			return Ros(self.st, self.vs, portList)
+		elif (string == "android"):
+			return Android(self.st, self.vs, portList)
 		else:
 			raise Exception("Invalid backend: \"" + string +"\"")
