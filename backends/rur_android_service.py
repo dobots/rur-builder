@@ -352,7 +352,7 @@ import android.util.Log;
 		
 		self.st.out("")
 		self.st.out("while (true) {")
-		
+		self.st.inc_indent()
 		for p in self.vs.portList:
 			if (p.beStr == "android"):
 				port, port_name, port_direction, param_name, param_type, param_kind, port_pragmas, port_comments = self.vs.getPortConfiguration(p)
