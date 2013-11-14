@@ -308,13 +308,14 @@ import android.util.Log;
 			if param_kind == idltype.tk_sequence:
 				self.st.out(self.getMessengerType(param_type, param_kind) + " readVal = msg.getData()." + self.getMessengerGetType(param_type, param_kind) + "(\"data\");")
 				self.st.out(self.getJavaType(param_type, param_kind) + " bufVal = new " + self.getJavaType(param_type, param_kind) + "(readVal.length);")
-				self.st.out("String str = \"Read msg: \";")
+				self.st.out("StringBuffer str = new StringBuffer(\"Read msg: \");")
 				self.st.out("for (int i=0; i<readVal.length; i++) {")
 				self.st.inc_indent()
 				self.st.out("bufVal.set(i, readVal[i]);")
-				self.st.out("str += readVal[i] + \" \";")
+				self.st.out("str.append(readVal[i]);")
+				self.st.out("str.append(\" \");")
 				self.vs.writeFunctionEnd()
-				self.st.out("Log.i(TAG, str);")
+				self.st.out("Log.i(TAG, str.toString());")
 				self.st.out("synchronized(mPort" + port_name + "InBuffer) {")
 				self.st.inc_indent()
 				self.st.out("mPort" + port_name + "InBuffer.add(bufVal);")
@@ -352,7 +353,7 @@ import android.util.Log;
 		
 		self.st.out("")
 		self.st.out("while (true) {")
-		
+		self.st.inc_indent()
 		for p in self.vs.portList:
 			if (p.beStr == "android"):
 				port, port_name, port_direction, param_name, param_type, param_kind, port_pragmas, port_comments = self.vs.getPortConfiguration(p)
@@ -377,14 +378,21 @@ import android.util.Log;
 					self.st.out("if (output" + port_name + ".getSuccess()) {")
 					self.st.inc_indent()
 					if param_kind == idltype.tk_sequence:
-						self.st.out("Log.i(TAG, \"output" + port_name + "=\" + output" + port_name + ".getVal().toString() + \" \");")
+						self.st.out("StringBuffer str = new StringBuffer();")
+						self.st.out("str.append(\"output" + port_name + "=\");")
+						self.st.out("str.append(output" + port_name + ".getVal().toString());")
+						self.st.out("str.append(\" \");")
+						#self.st.out("Log.i(TAG, \"output" + port_name + "=\" + output" + port_name + ".getVal().toString() + \" \");")
 						size = "(int) output" + port_name + ".getVal().size()"
 						self.st.out(self.getMessengerType(param_type, param_kind) + " data = new " + self.getMessengerType(param_type, param_kind, size) + ";")
 						self.st.out("for (int i=0; i<output" + port_name + ".getVal().size(); i++) {")
 						self.st.inc_indent()
 						self.st.out("data[i] = output" + port_name + ".getVal().get(i);")
-						self.st.out("Log.i(TAG, output" + port_name + ".getVal().get(i) + \" \");")
+						self.st.out("str.append(output" + port_name + ".getVal().get(i));")
+						self.st.out("str.append(\" \");")
+						#self.st.out("Log.i(TAG, output" + port_name + ".getVal().get(i) + \" \");")
 						self.vs.writeFunctionEnd()
+						self.st.out("Log.i(TAG, str.toString());")
 						self.st.out("Message msg = Message.obtain(null, AimProtocol.MSG_PORT_DATA);")
 						self.st.out("Bundle bundle = new Bundle();")
 						self.st.out("bundle.putInt(\"datatype\", " + self.getMessengerDataType(param_type, param_kind) + ");")
