@@ -201,7 +201,7 @@ class ZeroMQ:
 		self.st.out(' * the host something like "127.0.0.1" or "dev.almende.com" (that is resolvable by dns), "port" is a TCP/UDP port, and')
 		self.st.out(' * "pid" is the process identifier.')
 		self.st.out(' */')
-		self.st.out('typedef struct psn_record_t {')
+		self.st.out('typedef struct pns_record_t {')
 		self.st.inc_indent()
 		self.st.out('std::string name;')
 		self.st.out('std::string host;')
