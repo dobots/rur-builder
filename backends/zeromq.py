@@ -34,10 +34,6 @@ import sys, string
 sys.path.append('./helper')
 from helper import rur
 
-# TODO: finish coversion of self.writePort
-# TODO: Close() should this be a default function?
-# TODO: port->writeStrict() and port->setStrict()
-
 class ZeroMQ:
 
 	def __init__(self, st, visitor, portList):
@@ -57,7 +53,7 @@ class ZeroMQ:
 		print "#include <unistd.h>" # for getpid()
 		print "// zeromq specific headers"
 		print "#include <zmq.hpp>"
-		print "#include <json_spirit_reader.h>"
+		print "#include <json_spirit_reader.h>" # Use boost instead?
 		print "#include <pthread.h>"
 		print
 
