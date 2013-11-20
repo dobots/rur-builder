@@ -43,6 +43,9 @@ from zeromq import ZeroMQ
 from ros import Ros
 from android import Android
 
+class Default:
+	pass
+
 class Main:
 	def __init__(self, st, tree, args):
 		self.st = st
@@ -95,5 +98,7 @@ class Main:
 			return Ros(self.st, self.vs, portList)
 		elif (string == "android"):
 			return Android(self.st, self.vs, portList)
+		elif (string == "default"):
+			return Default()
 		else:
 			raise Exception("Invalid backend: \"" + string +"\"")
