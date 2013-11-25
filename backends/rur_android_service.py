@@ -46,6 +46,7 @@ class Android_service (Main):
 		self.st.inc_indent()
 		self.st.out("private static final String TAG = \"" + self.vs.classname + "Service\";")
 		self.st.out("private static final String MODULE_NAME = \"" + self.vs.classname + "\";")
+		self.st.out("private int mId = -1;")
 		self.st.out("Messenger mToMsgService = null;")
 		self.st.out("final Messenger mFromMsgService = new Messenger(new IncomingMsgHandler());")
 		self.st.out("boolean mMsgServiceIsBound;")
@@ -100,19 +101,26 @@ import android.util.Log;
 		body = '''
 	AIMRun mAIMRun = null;
 	
+	public void start() {
+		if (mId < 0)
+			return;
+		if (!mMsgServiceIsBound)
+			bindToMsgService();
+		if (mAIMRun == null) {
+			mAIMRun = new AIMRun();
+			mAIMRun.execute(mId);
+		}
+	}
+	
 	public void onCreate() {
-		bindToMsgService();
-		
-		Integer id = 0; // TODO: adjustable id, multiple modules
-		mAIMRun = new AIMRun();
-		mAIMRun.execute(id);
+		// On create mId is unknown!
 	}
 	
 	public void onDestroy() {
 		super.onDestroy();
 		mAIMRun.cancel(true);
 		unbindFromMsgService();
-		Log.i(TAG, "onDestroy");
+		Log.d(TAG, "onDestroy");
 	}
 	
 	@Override
@@ -132,14 +140,20 @@ import android.util.Log;
 	@Override
 	public void onStart(Intent intent, int startId) {
 //		handleStartCommand(intent);
+		mId = intent.getIntExtra("id", 0);
+		Log.d(TAG, "onStart " + mId);
+		start();
 	}
 	
 	// Called each time a client uses startService()
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-//	    handleStartCommand(intent);
-	    // We want this service to continue running until it is explicitly stopped, so return sticky.
-	    return START_STICKY;
+//		handleStartCommand(intent);
+		// We want this service to continue running until it is explicitly stopped, so return sticky.
+		mId = intent.getIntExtra("id", 0);
+		Log.d(TAG, "onStartCommand " + mId);
+		start();
+		return START_STICKY;
 	}
 	
 	void bindToMsgService() {
@@ -159,7 +173,7 @@ import android.util.Log;
 				Message msg = Message.obtain(null, AimProtocol.MSG_UNREGISTER);
 				Bundle bundle = new Bundle();
 				bundle.putString("module", MODULE_NAME);
-				bundle.putInt("id", 0); // TODO: adjustable id, multiple modules
+				bundle.putInt("id", mId);
 				msg.setData(bundle);
 				msgSend(msg);
 			}
@@ -213,7 +227,7 @@ import android.util.Log;
 		self.st.out("Message msg = Message.obtain(null, AimProtocol.MSG_REGISTER);")
 		self.st.out("Bundle bundle = new Bundle();")
 		self.st.out("bundle.putString(\"module\", MODULE_NAME);")
-		self.st.out("bundle.putInt(\"id\", 0); // TODO: adjustable id, multiple modules")
+		self.st.out("bundle.putInt(\"id\", mId);")
 		self.st.out("msg.setData(bundle);")
 		self.st.out("msgSend(msg);")
 		
@@ -227,7 +241,7 @@ import android.util.Log;
 					self.st.out("msgPort.replyTo = mPort" + port_name + "InMessenger;")
 					self.st.out("Bundle bundlePort = new Bundle();")
 					self.st.out("bundlePort.putString(\"module\", MODULE_NAME);")
-					self.st.out("bundlePort.putInt(\"id\", 0); // TODO: adjustable id, multiple modules")
+					self.st.out("bundlePort.putInt(\"id\", mId);")
 					self.st.out("bundlePort.putString(\"port\", \"" + port_name + "\");")
 					self.st.out("msgPort.setData(bundlePort);")
 					self.st.out("msgSend(mToMsgService, msgPort);")
@@ -315,13 +329,13 @@ import android.util.Log;
 				self.st.out("str.append(readVal[i]);")
 				self.st.out("str.append(\" \");")
 				self.vs.writeFunctionEnd()
-				self.st.out("Log.i(TAG, str.toString());")
+				self.st.out("Log.d(TAG, str.toString());")
 				self.st.out("synchronized(mPort" + port_name + "InBuffer) {")
 				self.st.inc_indent()
 				self.st.out("mPort" + port_name + "InBuffer.add(bufVal);")
 			else:
 				self.st.out(self.getJavaType(param_type, param_kind) + " readVal = msg.getData()." + self.getMessengerGetType(param_type, param_kind) + "(\"data\");")
-				self.st.out("Log.i(TAG, \"Read msg: \" + readVal);")
+				self.st.out("Log.d(TAG, \"Read msg: \" + readVal);")
 				self.st.out("synchronized(mPort" + port_name + "InBuffer) {")
 				self.st.inc_indent()
 				self.st.out("mPort" + port_name + "InBuffer.add(readVal);")
@@ -341,9 +355,9 @@ import android.util.Log;
 		self.st.inc_indent()
 		self.st.out("protected Boolean doInBackground(Integer... id) {")
 		self.st.inc_indent()
-		self.st.out("Log.i(TAG, \"Starting AIMRun\");")
+		self.st.out("Log.i(TAG, \"Starting AIMRun \" + id);")
 		self.st.out(self.vs.classname + "Ext aim = new " + self.vs.classname + "Ext();")
-		self.st.out("//aim.Init(\"0\");")
+		self.st.out("//aim.Init(\"0\"); // TODO: pass on the id")
 		
 		for p in self.vs.portList:
 			if (p.beStr == "android"):
@@ -382,7 +396,7 @@ import android.util.Log;
 						self.st.out("str.append(\"output" + port_name + "=\");")
 						self.st.out("str.append(output" + port_name + ".getVal().toString());")
 						self.st.out("str.append(\" \");")
-						#self.st.out("Log.i(TAG, \"output" + port_name + "=\" + output" + port_name + ".getVal().toString() + \" \");")
+						#self.st.out("Log.d(TAG, \"output" + port_name + "=\" + output" + port_name + ".getVal().toString() + \" \");")
 						size = "(int) output" + port_name + ".getVal().size()"
 						self.st.out(self.getMessengerType(param_type, param_kind) + " data = new " + self.getMessengerType(param_type, param_kind, size) + ";")
 						self.st.out("for (int i=0; i<output" + port_name + ".getVal().size(); i++) {")
@@ -390,9 +404,9 @@ import android.util.Log;
 						self.st.out("data[i] = output" + port_name + ".getVal().get(i);")
 						self.st.out("str.append(output" + port_name + ".getVal().get(i));")
 						self.st.out("str.append(\" \");")
-						#self.st.out("Log.i(TAG, output" + port_name + ".getVal().get(i) + \" \");")
+						#self.st.out("Log.d(TAG, output" + port_name + ".getVal().get(i) + \" \");")
 						self.vs.writeFunctionEnd()
-						self.st.out("Log.i(TAG, str.toString());")
+						self.st.out("Log.d(TAG, str.toString());")
 						self.st.out("Message msg = Message.obtain(null, AimProtocol.MSG_PORT_DATA);")
 						self.st.out("Bundle bundle = new Bundle();")
 						self.st.out("bundle.putInt(\"datatype\", " + self.getMessengerDataType(param_type, param_kind) + ");")
@@ -400,7 +414,7 @@ import android.util.Log;
 						self.st.out("msg.setData(bundle);")
 						self.st.out("msgSend(mPort" + port_name + "OutMessenger, msg);")
 					else:
-						self.st.out("Log.i(TAG, \"output" + port_name + "=\" + output" + port_name + ".getVal());")
+						self.st.out("Log.d(TAG, \"output" + port_name + "=\" + output" + port_name + ".getVal());")
 						self.st.out("Message msg = Message.obtain(null, AimProtocol.MSG_PORT_DATA);")
 						self.st.out("Bundle bundle = new Bundle();")
 						self.st.out("bundle.putInt(\"datatype\", " + self.getMessengerDataType(param_type, param_kind) + ");")
