@@ -207,7 +207,7 @@ import android.util.Log;
 			//msg.replyTo = mFromMsgService;
 			messenger.send(msg);
 		} catch (RemoteException e) {
-			Log.i(TAG, "failed to send msg to service. " + e);
+			Log.i(TAG, "failed to send msg. " + e);
 			// There is nothing special we need to do if the service has crashed.
 		}
 	}
@@ -242,7 +242,7 @@ import android.util.Log;
 					self.st.out("Bundle bundlePort = new Bundle();")
 					self.st.out("bundlePort.putString(\"module\", MODULE_NAME);")
 					self.st.out("bundlePort.putInt(\"id\", mId);")
-					self.st.out("bundlePort.putString(\"port\", \"" + port_name + "\");")
+					self.st.out("bundlePort.putString(\"port\", \"" + port_name.lower() + "\");")
 					self.st.out("msgPort.setData(bundlePort);")
 					self.st.out("msgSend(mToMsgService, msgPort);")
 					self.vs.writeFunctionEnd()
@@ -277,7 +277,7 @@ import android.util.Log;
 			if (p.beStr == "android"):
 				port, port_name, port_direction, param_name, param_type, param_kind, port_pragmas, port_comments = self.vs.getPortConfiguration(p)
 				if port_direction == rur.Direction.OUT:
-					self.st.out("if (msg.getData().getString(\"port\").equals(\"" + port_name + "\"))")
+					self.st.out("if (msg.getData().getString(\"port\").equals(\"" + port_name.lower() + "\"))")
 					self.st.inc_indent()
 					self.st.out("mPort" + port_name + "OutMessenger = msg.replyTo;")
 					self.st.dec_indent()
@@ -322,6 +322,10 @@ import android.util.Log;
 			if param_kind == idltype.tk_sequence:
 				self.st.out(self.getMessengerType(param_type, param_kind) + " readVal = msg.getData()." + self.getMessengerGetType(param_type, param_kind) + "(\"data\");")
 				self.st.out(self.getJavaType(param_type, param_kind) + " bufVal = new " + self.getJavaType(param_type, param_kind) + "(readVal.length);")
+				
+				# Just for debug! should remove this for speedup
+				self.st.out("")
+				self.st.out("// Debug")
 				self.st.out("StringBuffer str = new StringBuffer(\"Read msg: \");")
 				self.st.out("for (int i=0; i<readVal.length; i++) {")
 				self.st.inc_indent()
@@ -330,12 +334,18 @@ import android.util.Log;
 				self.st.out("str.append(\" \");")
 				self.vs.writeFunctionEnd()
 				self.st.out("Log.d(TAG, str.toString());")
+				self.st.out("")
+				
 				self.st.out("synchronized(mPort" + port_name + "InBuffer) {")
 				self.st.inc_indent()
 				self.st.out("mPort" + port_name + "InBuffer.add(bufVal);")
 			else:
 				self.st.out(self.getJavaType(param_type, param_kind) + " readVal = msg.getData()." + self.getMessengerGetType(param_type, param_kind) + "(\"data\");")
+				
+				# Just for debug! should remove this for speedup
+				self.st.out("// Debug")
 				self.st.out("Log.d(TAG, \"Read msg: \" + readVal);")
+				
 				self.st.out("synchronized(mPort" + port_name + "InBuffer) {")
 				self.st.inc_indent()
 				self.st.out("mPort" + port_name + "InBuffer.add(readVal);")
@@ -392,6 +402,10 @@ import android.util.Log;
 					self.st.out("if (output" + port_name + ".getSuccess()) {")
 					self.st.inc_indent()
 					if param_kind == idltype.tk_sequence:
+						
+						# Just for debug! should remove this for speedup
+						self.st.out("")
+						self.st.out("// Debug")
 						self.st.out("StringBuffer str = new StringBuffer();")
 						self.st.out("str.append(\"output" + port_name + "=\");")
 						self.st.out("str.append(output" + port_name + ".getVal().toString());")
@@ -407,6 +421,8 @@ import android.util.Log;
 						#self.st.out("Log.d(TAG, output" + port_name + ".getVal().get(i) + \" \");")
 						self.vs.writeFunctionEnd()
 						self.st.out("Log.d(TAG, str.toString());")
+						self.st.out("")
+						
 						self.st.out("Message msg = Message.obtain(null, AimProtocol.MSG_PORT_DATA);")
 						self.st.out("Bundle bundle = new Bundle();")
 						self.st.out("bundle.putInt(\"datatype\", " + self.getMessengerDataType(param_type, param_kind) + ");")
@@ -414,7 +430,11 @@ import android.util.Log;
 						self.st.out("msg.setData(bundle);")
 						self.st.out("msgSend(mPort" + port_name + "OutMessenger, msg);")
 					else:
+						
+						# Just for debug! should remove this for speedup
+						self.st.out("// Debug")
 						self.st.out("Log.d(TAG, \"output" + port_name + "=\" + output" + port_name + ".getVal());")
+						
 						self.st.out("Message msg = Message.obtain(null, AimProtocol.MSG_PORT_DATA);")
 						self.st.out("Bundle bundle = new Bundle();")
 						self.st.out("bundle.putInt(\"datatype\", " + self.getMessengerDataType(param_type, param_kind) + ");")
