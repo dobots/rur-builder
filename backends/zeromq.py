@@ -340,7 +340,7 @@ class ZeroMQ:
 	#	self.st.out("zmqSs.str(\"\"); zmqSs.clear();")
 	#	self.st.out('zmqSs << "/' + self.classname.lower() + '" << cliParam->module_id << "/' + port_name + '";')
 	#	self.st.out(port + ".name = zmqSs.str();")
-		self.st.out('zmqPortName = "/' + self.vs.classname.lower() + '" + cliParam->module_id + "/' + port.lower() + '";')
+		self.st.out('zmqPortName = "/' + self.vs.classname.lower() + '" + cliParam->module_id + "/' + port_name.lower() + '";')
 		self.st.out(portname + ".name = zmqPortName;")
 	#	self.st.out("std::string resolve = \"/resolve\" + portName.str();" )
 		self.st.out('zmqPortName = "/resolve" + ' + portname + '.name;')
