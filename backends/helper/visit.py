@@ -64,7 +64,7 @@ class Visit (idlvisitor.AstVisitor, idlvisitor.TypeVisitor):
 		idltype.tk_float:      "float",
 		idltype.tk_double:     "double",
 		idltype.tk_boolean:    "boolean",
-		idltype.tk_char:       "char",
+		idltype.tk_char:       "unsigned char",
 		idltype.tk_octet:      "octet",
 		idltype.tk_any:        "any",
 		idltype.tk_TypeCode:   "CORBA::TypeCode",
