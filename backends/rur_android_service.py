@@ -240,6 +240,7 @@ import android.util.Log;
 					self.st.out("Message msgPort = Message.obtain(null, AimProtocol.MSG_SET_MESSENGER);")
 					self.st.out("msgPort.replyTo = mPort" + port_name + "InMessenger;")
 					self.st.out("Bundle bundlePort = new Bundle();")
+					self.st.out("bundle.putString(\"package\", getPackageName());")
 					self.st.out("bundlePort.putString(\"module\", MODULE_NAME);")
 					self.st.out("bundlePort.putInt(\"id\", mId);")
 					self.st.out("bundlePort.putString(\"port\", \"" + port_name.lower() + "\");")
