@@ -411,29 +411,32 @@ class ZeroMQ:
 #			self.st.out("std::cout << \"reply_size = \" << reply_size << \" reply=\" << std::string(reply) << std::endl;")
 #			self.st.out('for (int i=0; i<reply_size; ++i) std::cout << +reply[i] << " ";')
 #			self.st.out("std::cout << std::endl;")
-			self.st.out("if (reply_size < 2) std::cerr << \"Error: Reply is not large enough to store a value!\" << std::endl;")
-			self.st.out("std::stringstream ss; ss.clear(); ss.str(\"\");")
-			self.st.out("ss << std::string(reply);")
-			if param_kind == idltype.tk_sequence:
-				self.st.out(self.vs.getSeqType(param_type) + " itemVal;")
-				self.st.out("std::stringstream ssItem;")
-				self.st.out(port + "Value.clear();")
-#				self.st.out("assert(false);  // todo: cast char* array to vector")
-#				self.st.out("istringstream iss(ss);")
-#				self.st.out("vector<string> tokens;")
-#				self.st.out("copy(istream_iterator<string>(iss), istream_iterator<string>(), back_inserter<vector<string> >(tokens));")
-				self.st.out("std::string item;")
-				self.st.out("char delim(' ');")
-#				self.st.out('std::cout << "received: " << ss.str() << std::endl;')
-				self.st.out("while (std::getline(ss, item, delim)) {")
-				self.st.inc_indent()
-				self.st.out("ssItem.clear(); ssItem.str(\"\");")
-				self.st.out("ssItem << item;")
-				self.st.out("ssItem >> itemVal;")
-				self.st.out(port + "Value.push_back(itemVal);")
-				self.vs.writeFunctionEnd()
+			self.st.out("if (reply_size < 1) std::cerr << \"Error: Reply is not large enough to store a value!\" << std::endl;")
+			if param_kind == idltype.tk_string:
+				self.st.out(port + "Value = std::string(reply);");
 			else:
-				self.st.out("ss >> " + port + "Value;")
+				self.st.out("std::stringstream ss; ss.clear(); ss.str(\"\");")
+				self.st.out("ss << std::string(reply);")
+				if param_kind == idltype.tk_sequence:
+					self.st.out(self.vs.getSeqType(param_type) + " itemVal;")
+					self.st.out("std::stringstream ssItem;")
+					self.st.out(port + "Value.clear();")
+#					self.st.out("assert(false);  // todo: cast char* array to vector")
+#					self.st.out("istringstream iss(ss);")
+#					self.st.out("vector<string> tokens;")
+#					self.st.out("copy(istream_iterator<string>(iss), istream_iterator<string>(), back_inserter<vector<string> >(tokens));")
+					self.st.out("std::string item;")
+					self.st.out("char delim(' ');")
+#					self.st.out('std::cout << "received: " << ss.str() << std::endl;')
+					self.st.out("while (std::getline(ss, item, delim)) {")
+					self.st.inc_indent()
+					self.st.out("ssItem.clear(); ssItem.str(\"\");")
+					self.st.out("ssItem << item;")
+					self.st.out("ssItem >> itemVal;")
+					self.st.out(port + "Value.push_back(itemVal);")
+					self.vs.writeFunctionEnd()
+				else:
+					self.st.out("ss >> " + port + "Value;")
 #				self.st.out(portname + "Value = (reply[0]) + (reply[1] << 8); // little-endianness")
 #				self.st.out(" std::cout << \"Values\" << (reply[0]) << \" and \" << (reply[1]) << std::endl; ")
 			self.st.out("delete [] reply;")
@@ -599,8 +602,8 @@ char* ''' + self.vs.classname + '''::GetReply(zmq::socket_t *s, bool & state, bo
 
 void ''' + self.vs.classname + '''::SendRequest(zmq::socket_t *s, bool & state, bool blocking, std::string str) {
   if (state) {
-    zmq::message_t request(str.size()+1);
-    memcpy((void *) request.data(), str.c_str(), str.size()+1);
+    zmq::message_t request(str.size());
+    memcpy((void *) request.data(), str.c_str(), str.size());
     if (debug) std::cout << "Send request: " << str << std::endl;
     if (blocking)
       state = s->send(request);

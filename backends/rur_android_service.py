@@ -226,6 +226,7 @@ import android.util.Log;
 		self.st.out("mToMsgService = new Messenger(service);")
 		self.st.out("Message msg = Message.obtain(null, AimProtocol.MSG_REGISTER);")
 		self.st.out("Bundle bundle = new Bundle();")
+		self.st.out("bundle.putString(\"package\", getPackageName());")
 		self.st.out("bundle.putString(\"module\", MODULE_NAME);")
 		self.st.out("bundle.putInt(\"id\", mId);")
 		self.st.out("msg.setData(bundle);")
