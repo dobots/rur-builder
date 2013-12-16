@@ -182,4 +182,7 @@ class Standard:
 	def writeDummyInitiation(self, node):
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(node)
 		if port_direction == rur.Direction.IN:
-			self.st.out("dummy" + port_name + " = " + param_type + "(0);")
+			if param_kind == idltype.tk_string:
+				#self.st.out("dummy" + port_name + " = " + param_type;")
+			else:
+				self.st.out("dummy" + port_name + " = " + param_type + "(0);")
