@@ -466,6 +466,8 @@ import android.util.Log;
 		else:
 			if param_type == "int":
 				return "Integer"
+			elif param_kind == idltype.tk_string:
+				return "String"
 			return param_type[0].upper() + param_type[1:]
 
 	def getMessengerType(self, param_type, param_kind, size=""):
@@ -480,7 +482,7 @@ import android.util.Log;
 			seqType = self.vs.getSeqType(param_type)
 			return "get" + seqType[0].upper() + seqType[1:] + "Array"
 		else:
-			if (param_type == "string"):
+			if (param_kind == idltype.tk_string):
 				return "getString"
 			return "get" + param_type[0].upper() + param_type[1:]
 
@@ -489,7 +491,7 @@ import android.util.Log;
 			seqType = self.vs.getSeqType(param_type)
 			return "put" + seqType[0].upper() + seqType[1:] + "Array"
 		else:
-			if (param_type == "string"):
+			if (param_kind == idltype.tk_string):
 				return "putString"
 			return "put" + param_type[0].upper() + param_type[1:]
 
@@ -500,7 +502,7 @@ import android.util.Log;
 				return "AimProtocol.DATATYPE_INT_ARRAY"
 			return "AimProtocol.DATATYPE_FLOAT_ARRAY"
 		else:
-			if (param_type == "string"):
+			if (param_kind == idltype.tk_string):
 				return "AimProtocol.DATATYPE_STRING"
 			if (param_type == "int"):
 				return "AimProtocol.DATATYPE_INT"

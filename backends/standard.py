@@ -184,5 +184,6 @@ class Standard:
 		if port_direction == rur.Direction.IN:
 			if param_kind == idltype.tk_string:
 				#self.st.out("dummy" + port_name + " = " + param_type;")
+				pass
 			else:
 				self.st.out("dummy" + port_name + " = " + param_type + "(0);")

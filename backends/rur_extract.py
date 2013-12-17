@@ -51,6 +51,8 @@ class Main_head (Main):
 	def getFullType(self, param_type, param_kind):
 		if param_kind == idltype.tk_sequence:
 			seq_type = self.vs.getSeqType(param_type) + 'array'
+		elif param_kind == idltype.tk_string:
+			seq_type = "string"
 		else:
 			seq_type = param_type
 		return seq_type;
