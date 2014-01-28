@@ -50,6 +50,8 @@ class Android_service (Main):
 		self.st.out("Messenger mToMsgService = null;")
 		self.st.out("final Messenger mFromMsgService = new Messenger(new IncomingMsgHandler());")
 		self.st.out("boolean mMsgServiceIsBound;")
+		self.st.out("Timer mHeartBeatTimer;")
+		self.st.out("HeartBeatTimerTask mHeartBeatTimerTask;")
 		self.st.out("")
 		
 		for p in self.vs.portList:
@@ -80,6 +82,8 @@ class Android_service (Main):
 		body = '''
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.app.Service;
 import android.content.ComponentName;
@@ -114,10 +118,14 @@ import android.util.Log;
 	
 	public void onCreate() {
 		// On create mId is unknown!
+		mHeartBeatTimer = new Timer();
+		mHeartBeatTimerTask = new HeartBeatTimerTask();
+		mHeartBeatTimer.schedule(mHeartBeatTimerTask ,0, 1000);
 	}
 	
 	public void onDestroy() {
 		super.onDestroy();
+		mHeartBeatTimer.cancel();
 		mAIMRun.cancel(true);
 		unbindFromMsgService();
 		Log.d(TAG, "onDestroy");
@@ -209,6 +217,21 @@ import android.util.Log;
 		} catch (RemoteException e) {
 			Log.i(TAG, "failed to send msg. " + e);
 			// There is nothing special we need to do if the service has crashed.
+		}
+	}
+	
+	private class HeartBeatTimerTask extends TimerTask {
+		@Override
+		public void run() {
+			if (mToMsgService != null) {
+				Message msg = Message.obtain(null, AimProtocol.MSG_PONG);
+				Bundle b = new Bundle();
+				b.putString("package", getPackageName());
+				b.putString("module", MODULE_NAME);
+				b.putInt("id", mId);
+				msg.setData(b);
+				msgSend(msg);
+			}
 		}
 	}
 	
