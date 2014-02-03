@@ -411,12 +411,24 @@ class ZeroMQ:
 #			self.st.out("std::cout << \"reply_size = \" << reply_size << \" reply=\" << std::string(reply) << std::endl;")
 #			self.st.out('for (int i=0; i<reply_size; ++i) std::cout << +reply[i] << " ";')
 #			self.st.out("std::cout << std::endl;")
-			self.st.out("if (reply_size < 1) std::cerr << \"Error: Reply is not large enough to store a value!\" << std::endl;")
+
+# %%%%%%%%% TEST %%%%%%%%%
+			#self.st.out("if (reply == \"ACK\")")
+			#self.st.inc_indent()
+			#self.st.out("return NULL;")
+			#self.st.dec_indent()
+
+			self.st.out("if (reply_size < 1) {")
+			self.st.inc_indent()
+			self.st.out("std::cerr << \"Error: Reply is not large enough to store a value!\" << std::endl;")
+			self.st.out("delete [] reply;")
+			self.st.out("return NULL;")
+			self.vs.writeFunctionEnd()
 			if param_kind == idltype.tk_string:
-				self.st.out(port + "Value = std::string(reply);");
+				self.st.out(port + "Value = std::string(reply, reply_size-1);");
 			else:
 				self.st.out("std::stringstream ss; ss.clear(); ss.str(\"\");")
-				self.st.out("ss << std::string(reply);")
+				self.st.out("ss << std::string(reply, reply_size-1);")
 				if param_kind == idltype.tk_sequence:
 					self.st.out(self.vs.getSeqType(param_type) + " itemVal;")
 					self.st.out("std::stringstream ssItem;")
@@ -467,6 +479,15 @@ class ZeroMQ:
 			self.st.out("bool state = " + port + "Out.ready;")
 #			self.st.out('std::cout << "sendrequest: " << ss.str() << " size: " << ss.str().size() << std::endl;')
 			self.st.out("SendRequest(" + port + "Out.sock, state, false, ss.str());")
+
+# %%%%%%%% TEST %%%%%%%%%%%%
+			#self.st.out("if (state) {")
+			#self.st.inc_indent()
+			#self.st.out(port + "Out.ready = true;")
+			#self.st.out("pthread_mutex_unlock(&cmdMutex);")
+			#self.st.out("return false;")
+			#self.vs.writeFunctionEnd()
+
 			self.st.out("if (state) " + port + "Out.ready = false;")
 			self.st.out("if (!" + port + "Out.ready) {")
 			self.st.inc_indent()
@@ -509,19 +530,21 @@ class ZeroMQ:
 void ''' + self.vs.classname + '''::Resolve(pns_record & record) {
   std::cout << "Acquire TCP/IP port for " << record.name << std::endl;
   std::string reqname = record.name + ':' + record.pid;
-  zmq::message_t request (reqname.size() + 1);
-  memcpy ((void *) request.data (), reqname.c_str(), reqname.size());
+  zmq::message_t request (reqname.size());
+  memcpy((void *) request.data(), reqname.c_str(), reqname.size());
   ns_socket->send(request);
   
   zmq::message_t reply;
   if (!ns_socket->recv (&reply)) return;
   size_t msg_size = reply.size();
-  char* address = new char[msg_size+1];
-  memcpy (address, (void *) reply.data(), msg_size);
-  address[msg_size] = \'\\0\';
-  std::string json = std::string(address);
-  std::cout << "Received " << json << std::endl;
-  delete [] address;
+  std::string json = std::string((char*)reply.data(), msg_size);
+  if (debug)
+    std::cout << "Received " << json << std::endl;
+//  char* address = new char[msg_size+1];
+//  memcpy (address, (void *) reply.data(), msg_size);
+//  address[msg_size] = \'\\0\';
+//  std::string json = std::string(address);
+//  delete [] address;
   
   // get json object
   bool valid;
@@ -565,7 +588,12 @@ bool ''' + self.vs.classname + '''::ReceiveAck(zmq::socket_t *s, bool & state, b
   int reply_size = 0;
   char *reply = GetReply(s, state, blocking, reply_size);
   if (reply == NULL) return false;
-  std::string req = std::string(reply);
+  if (reply_size < 1) {
+    std::cerr << "Error: Reply is not large enough" << std::endl;
+    delete [] reply;
+    return false;
+  }
+  std::string req = std::string(reply, reply_size-1);
   delete [] reply;
   if (req.find("ACK") != std::string::npos) {
     if (debug) std::cout << "Got ACK, thanks!" << std::endl;
@@ -592,9 +620,9 @@ char* ''' + self.vs.classname + '''::GetReply(zmq::socket_t *s, bool & state, bo
   if (state) {
     size_t msg_size = reply.size();
     result = new char[msg_size+1];
-    memcpy (result, (void *) reply.data(), msg_size);
+    memcpy(result, (void *) reply.data(), msg_size); // TODO: this copy should not be needed
     result[msg_size] = \'\\0\';
-    reply_size = msg_size;
+    reply_size = msg_size+1;
     //std::cout << "Result: \\"" << std::string(result) << "\\"" << std::endl;
   }
   return result;
@@ -620,14 +648,18 @@ void ''' + self.vs.classname + '''::HandleCommand() {
   char *reply = GetReply(cmd_socket, state, true, reply_size);
   if (reply == NULL) return;
   std::cout << "HandleCommand: " << std::string(reply, reply_size) << std::endl;
-  if (reply_size < 2) std::cerr << "Error: Reply is not large for magic header + command string" << std::endl;
+  if (reply_size < 3) {
+    std::cerr << "Error: Reply is not large enough for magic header + command string" << std::endl;
+    delete [] reply;
+    return;
+  }
   char magic_value = reply[0];
-  reply[reply_size-1] = \'\\0\';
   if (magic_value == 0x01) { // connect to command...
-    std::string name = std::string(reply+1);
+    std::string name = std::string(reply+1, reply_size-2);
     int pos = name.find("->");
     if (pos == std::string::npos) {
       std::cerr << "Error: no -> separator in connect command" << std::endl;
+      delete [] reply;
       return;
     }
     std::string source = name.substr(0, pos);
