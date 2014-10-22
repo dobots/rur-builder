@@ -235,7 +235,8 @@ class NodeJS:
 		port, port_name, port_direction, param_name, param_type, param_kind, pragmas, comments = self.vs.getPortConfiguration(p)
 		if port_direction == rur.Direction.IN:
 			self.st.out("readBuf" + port_name + " = " + "std::deque<" + param_type + ">(0);")
-			self.st.out("readVal" + port_name + " = " + param_type + "(0);")
+			if param_kind != idltype.tk_string:
+				self.st.out("readVal" + port_name + " = " + param_type + "(0);")
 		if port_direction == rur.Direction.OUT:
 			self.st.out("writeBuf" + port_name + " = " + "std::deque<" + param_type + ">(0);")
 
@@ -287,7 +288,9 @@ class NodeJS:
 		self.st.out("" + self.vs.classname + "Ext* obj = new " + self.vs.classname + "Ext();")
 		self.st.out("obj->Wrap(args.This());")
 		self.st.out("")
-		self.st.out("std::string name = (std::string)*v8::String::AsciiValue(args[0]);")
+		# Or should we use v8::String::AsciiValue ??
+		self.st.out("v8::String::Utf8Value v8str(args[0]->ToString());")
+		self.st.out("std::string name = std::string(*v8str);")
 		self.st.out("obj->Init(name);")
 		self.st.out("")
 		self.st.out("pthread_mutex_init(&(obj->destroyMutex), NULL);")
@@ -409,7 +412,11 @@ class NodeJS:
 				self.st.out("return scope.Close(v8::Boolean::New(false)); // Could also throw an exception")
 				self.st.dec_indent()
 				self.st.out("pthread_mutex_lock(&(obj->readMutex" + port_name + "));")
-				self.st.out("obj->readBuf" + port_name + ".push_back(args[0]->NumberValue());")
+				if param_kind == idltype.tk_string:
+					self.st.out("v8::String::Utf8Value v8str(args[0]->ToString());")
+					self.st.out("obj->readBuf" + port_name + ".push_back(std::string(*v8str));")
+				else:
+					self.st.out("obj->readBuf" + port_name + ".push_back(args[0]->NumberValue());")
 			self.st.out("pthread_mutex_unlock(&(obj->readMutex" + port_name + "));")
 			self.st.out("return scope.Close(v8::Boolean::New(true));")
 			self.vs.writeFunctionEnd()
@@ -466,7 +473,10 @@ class NodeJS:
 				self.st.out("obj->nodeCallBack" + port_name + "->Call(v8::Context::GetCurrent()->Global(), argc, argv);")
 				self.vs.writeFunctionEnd()
 			else:
-				self.st.out("v8::Local<v8::Value> argv[argc] = { v8::Local<v8::Value>::New(v8::Number::New(obj->writeBuf" + port_name + ".front())) };")
+				if param_kind == idltype.tk_string:
+					self.st.out("v8::Local<v8::Value> argv[argc] = { v8::Local<v8::Value>::New(v8::String::New(obj->writeBuf" + port_name + ".front().c_str())) };")
+				else:
+					self.st.out("v8::Local<v8::Value> argv[argc] = { v8::Local<v8::Value>::New(v8::Number::New(obj->writeBuf" + port_name + ".front())) };")
 				self.st.out("obj->writeBuf" + port_name + ".pop_front();")
 				self.st.out("pthread_mutex_unlock(&(obj->writeMutex" + port_name + "));")
 				self.st.out("if (!obj->nodeCallBack" + port_name + ".IsEmpty())")
