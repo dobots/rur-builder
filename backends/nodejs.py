@@ -288,10 +288,9 @@ class NodeJS:
 		self.st.out("" + self.vs.classname + "Ext* obj = new " + self.vs.classname + "Ext();")
 		self.st.out("obj->Wrap(args.This());")
 		self.st.out("")
-		self.st.out("std::string name = (std::string)*v8::String::AsciiValue(args[0]);")
-		# Or should this be:
-		#                               (std::string)*v8::String::Utf8Value(args[0]->ToString());
-		#
+		# Or should we use v8::String::AsciiValue ??
+		self.st.out("v8::String::Utf8Value v8str(args[0]->ToString());")
+		self.st.out("std::string name = std::string(*v8str);")
 		self.st.out("obj->Init(name);")
 		self.st.out("")
 		self.st.out("pthread_mutex_init(&(obj->destroyMutex), NULL);")
@@ -414,8 +413,8 @@ class NodeJS:
 				self.st.dec_indent()
 				self.st.out("pthread_mutex_lock(&(obj->readMutex" + port_name + "));")
 				if param_kind == idltype.tk_string:
-					self.st.out("v8::String::Utf8Value param(args[0]->ToString());")
-					self.st.out("obj->readBuf" + port_name + ".push_back(std::string(*param));")
+					self.st.out("v8::String::Utf8Value v8str(args[0]->ToString());")
+					self.st.out("obj->readBuf" + port_name + ".push_back(std::string(*v8str));")
 				else:
 					self.st.out("obj->readBuf" + port_name + ".push_back(args[0]->NumberValue());")
 			self.st.out("pthread_mutex_unlock(&(obj->readMutex" + port_name + "));")
