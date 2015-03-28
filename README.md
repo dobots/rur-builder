@@ -24,12 +24,12 @@ The abstractions are written in IDL and look like a Java or C++ interface. The c
 ## Installation
 RurBuilder uses OmniIDL, so firstly OmniIDL has to be installed:
 
-<img src="https://raw.github.com/dobots/rur-builder/master/docs/logos/ubuntu.png" alt="Ubuntu" style="width: 16px;"/> 
+<img src="https://raw.github.com/dobots/rur-builder/master/doc/logos/ubuntu.png" alt="Ubuntu" style="width: 16px;"/> 
 Install OmniIDL via apt-get 
 ```bash
 sudo apt-get install omniidl
 ```
-<img src="https://raw.github.com/dobots/rur-builder/master/docs/logos/mac_os.png" alt="Mac OS X" style="width: 16px;"/> 
+<img src="https://raw.github.com/dobots/rur-builder/master/doc/logos/mac_os.png" alt="Mac OS X" style="width: 16px;"/> 
 Or install OmniIDL via homebrew
 ```bash
 brew install omniorb
