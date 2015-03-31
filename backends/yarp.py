@@ -264,18 +264,25 @@ class Yarp:
 				self.vs.writeFunctionEnd()
 				self.vs.writeFunctionEnd()
 				self.st.out("return &" + port + "Buf;")
-			else:
+                        # we make an exception for std::string, because b->get(0) is not the entire string...
+                        elif seq_type == "std::string":
 				self.st.out("Bottle *b = " + port + "->read(blocking);") 
 				self.st.out("if (b != NULL) { ")
 				self.st.inc_indent()
-                                # self.st.out("std::cout << b->toString() << std::endl;") 
 				self.st.out(port + "Buf = \"\";") 
                                 # we make one string and still consider more than one item
 				self.st.out("for (int i = 0; i < b->size(); ++i) {")
 				self.st.inc_indent()
 				self.st.out(port + "Buf.append(b->get(i).as" + capValue + "());") 
-                                # self.st.out("std::cout << " + port + "Buf << std::endl;") 
 				self.vs.writeFunctionEnd()
+				self.st.out("return &" + port + "Buf;") 
+				self.vs.writeFunctionEnd()
+				self.st.out("return NULL;")
+                        else:
+				self.st.out("Bottle *b = " + port + "->read(blocking);") 
+				self.st.out("if (b != NULL) { ")
+				self.st.inc_indent()
+				self.st.out(port + "Buf = b->get(0).as" + capValue + "();") 
 				self.st.out("return &" + port + "Buf;") 
 				self.vs.writeFunctionEnd()
 				self.st.out("return NULL;")
